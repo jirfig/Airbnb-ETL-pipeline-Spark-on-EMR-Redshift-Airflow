@@ -1,0 +1,11 @@
+aws emr create-cluster \
+--name "Capstone" \
+--release-label emr-6.2.0 \
+--applications Name=Hadoop Name=Spark Name=Hive Name=JupyterEnterpriseGateway \
+--instance-type m5.xlarge \
+--instance-count 3 \
+--use-default-roles \
+--log-uri "s3://airbnbprj-us/logs/" \
+--bootstrap-actions Path="s3://airbnbprj-us/config/emr-bootstrap.sh" \
+--configurations file:///home/jiri/path/config/spark-config.json \
+--ec2-attributes SubnetIds=subnet-08b68449098282765,KeyName=EC2_30-04-21

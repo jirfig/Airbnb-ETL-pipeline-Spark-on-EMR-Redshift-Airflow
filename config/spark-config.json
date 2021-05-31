@@ -1,0 +1,47 @@
+[{
+  "Classification": "spark-env",
+  "Configurations": [{
+    "Classification": "export",
+    "Properties": {
+      "PYSPARK_PYTHON": "/usr/bin/python3"
+    }
+  }]
+},
+{
+  "Classification": "spark-defaults",
+    "Properties": {
+      "spark.yarn.stagingDir": "hdfs:///tmp",
+      "spark.yarn.preserve.staging.files": "true",
+      "spark.kryoserializer.buffer.max": "2000M",
+      "spark.serializer": "org.apache.spark.serializer.KryoSerializer",
+      "spark.driver.maxResultSize": "0",
+      "spark.jars.packages": "com.johnsnowlabs.nlp:spark-nlp_2.12:3.0.3",
+      "spark.dynamicAllocation.enabled":  "false",
+      "spark.driver.memory": "9500M",
+      "spark.executor.memory": "9500M",
+      "spark.executor.cores": "4",
+      "spark.executor.instances": "2",
+      "spark.storage.level": "MEMORY_AND_DISK_SER",
+      "spark.network.timeout": "800s",
+      "spark.executor.heartbeatInterval": "60s",
+      "spark.default.parallelism": "10"
+    }
+},
+{ "Classification": "spark",
+    "Properties": {
+      "maximizeResourceAllocation": "false"
+    }
+},
+{
+  "Classification": "yarn-site",
+    "Properties": {
+      "yarn.nodemanager.vmem-check-enabled": "false",
+      "yarn.nodemanager.pmem-check-enabled": "false"
+    }
+},
+{ "Classification": "livy-conf",
+    "Properties": {
+      "livy.server.session.timeout": "5h"
+      }
+}
+]
