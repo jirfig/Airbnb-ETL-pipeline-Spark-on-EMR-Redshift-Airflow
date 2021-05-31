@@ -114,11 +114,11 @@ To run the Airflow ETL copy contents of [/airflow](airflow) folder to $AIRFLOW_H
 ### Spark on EMR
 The ETL is executed automatically by Airflow, but it can also be run manually in jupyter notebooks, in both cases on EMR.
 
-EMR cluster is created using AWS CLI command provided in [docs/aws_create_cluster.txt](docs/aws_create_cluster.txt), bootstrap file and spark configuration are in [config/emr-bootstrap.sh](config/emr-bootstrap.sh) and [config/spark-config.json](), respectively.
+EMR cluster is created using AWS CLI command provided in [docs/aws_create_cluster.txt](docs/aws_create_cluster.txt), bootstrap file and spark configuration are in [config/emr-bootstrap.sh](config/emr-bootstrap.sh) and [config/spark-config.json](config/spark-config.json), respectively.
 
-Jupyter notebook [etl-notebooks/emr-etl-notebook.ipynb](etl-notebooks/emr-etl-notebook.ipynb) can be uploaded in EMR notebook workspace and directly executed cell-by-cell.
-
-Airflow uses EmrAddStepsOperator to submit steps to EMR cluster. Each step is a .py file that contains identical code as implemented in /notebooks/emr-etl-notebook.ipynb, however it is split into five files stored in /apps folder.
+Jupyter notebook [etl_notebooks/emr-etl-notebook.ipynb](etl_notebooks/emr-etl-notebook.ipynb) can be uploaded in EMR notebook workspace and directly executed cell-by-cell.
+							
+Airflow uses EmrAddStepsOperator to submit steps to EMR cluster. Each step is a .py file that contains identical code as implemented in [etl_notebooks/emr-etl-notebook.ipynb](etl_notebooks/emr-etl-notebook.ipynb), however it is split into five files stored in /apps folder.
 Each .py file is run using spark-submit with execution date passed as argument to allow updating the dimensional model on monthly basis, exactly the frequency source data are available in.
 
 ```
@@ -162,7 +162,7 @@ Redshift is well suited for this. In case the query load gets too high we can in
 
 Note: Main focus of this project is the ETL pipeline toolchain. NLP algorithms such as language detection and sentiment analysis are included for demonstration only. Language detection appears to have worked quite well, but it is far from perfect. Quality of sentiment analysis is poor at best. Do not make any conclusions from the query results of the final model. 
 
-See the queries in [etl-notebooks/redshift-notebook.ipynb](etl-notebooks/redshift-notebook.ipynb)
+See the queries in [etl_notebooks/redshift-notebook.ipynb](etl_notebooks/redshift-notebook.ipynb)
 
 Are there more positive or negative reviews of Airbnb stays?
 - About 97% of reviews were detected positive, while about 3% negative.
