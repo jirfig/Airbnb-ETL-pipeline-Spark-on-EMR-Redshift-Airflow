@@ -152,6 +152,21 @@ process_weather_wait = EmrStepSensor(
 )
 ```
 
+Example runtime:
+- Creating dimensional model from scratch using January 2021 monthly data.
+- Master:1x m5.xlarge
+- Core:8x m5.xlarge
+- Configuration: [config/spark-config.json](config/spark-config.json) with "spark.executor.instances": "8",
+
+| Step| Runtime|
+|--|--|
+|preprocess_data		|3 minutes|	
+|process_listings_hosts		|1 minute|	
+|process_weather_submit		|48 seconds	|
+|process_reviews_submit		|39 minutes	|
+|process_reviewers_submit	|48 seconds	|
+
+
 ### Redshift
 Redshift cluster can be created using AWS CLI command from [docs/aws_create_cluster.txt](docs/aws_create_cluster.txt). It turned out that single-node Redshift cluster is sufficient for this project. The last part of the ETL where Redshift database is created and loaded with data is implemented in [etl_notebooks/redshift-notebook.ipynb](etl_notebooks/redshift-etl-notebook.ipynb) and in [airbnb-etl-airflow.py](airflow/AIRFLOW_HOME/dags/airbnb-etl-airflow.py). 
 
@@ -161,9 +176,14 @@ Features used
 - copy tables from csv in s3
 
 ## Challenges
-I would like to point out a few challenges I had to overcome.
+I had to overcome multiple challenges, I picked a few to highlight:
 
-### 1. Updating reviews table was too slow in Spark
+### 1. Spark on EMR was crashing
+I learned that its not a good idea to run Spark on EMR with default configuration. It was not possible to run through the code without error.
+
+I disabled the dynamic allocation setting `spark.dynamicAllocation = False` and manually specified `spark.executor.memory`, `spark.executor.cores`,      `spark.executor.instances` and other according to the cluster size and hardware. See [config/spark-config.json](config/spark-config.json).
+
+### 2. Updating reviews table was too slow in Spark
 
 Reviews table contains around 3m records, each monthly update contains some subset of the 3m records (since some reviews might have been removed from airbnb and thus are not scraped anymore) plus new additional reviews made during the last month.
 
@@ -191,8 +211,8 @@ df_reviews_updated = df_reviews_updated.dropDuplicates(["review_id"])
 ```
 After reimplementation EMR takes mere seconds to go through this step.
 
-### 2. 
-### 3
+### 3. Redshift copy was failing
+My initial attempts to copy data to Redshift were failing. I found out that Redshift provides a table that logs the errors called `stl_load_errors`. I queried the table to understand the root cause. It turned out that some some text fields were too long for 'varchar' type, which supports only 256 bytes at default. I changed to type to varchar(max) to fix it.
 
 ## Discussion - other scenarios
 What if ..:
