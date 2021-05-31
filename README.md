@@ -66,11 +66,13 @@ There are 3 sources of data:
 	- cities: Amsterdam, Paris, London, Berlin
 	- format: csv
 - Airbnb listings data downloaded from opendatasoft, it contains ~490k unique listings from several dozen cities globally. Format: csv. [Download here.](https://public.opendatasoft.com/explore/dataset/airbnb-listings)
-- Weather data, daily mean temperature and daily rainfall from ecadu.eu. Format: txt. [Download here.](www.ecad.eu)
+- Weather data, daily mean temperature and daily rainfall from ecadu.eu. Format: txt. [Download here.](https://www.ecad.eu)
 
 My usage of Inside Airbnb's data does not align perfectly with their mission, I can only say thank you and spread the word, check them out at [http://insideairbnb.com/](http://insideairbnb.com/)
 
 Total size of the source data is 5.8 GB, total number of records ~14.7 million. However, many of the records are duplicates.
+
+Use [get_original_data.ipynb](get_original_data.ipynb) to download the data.
 
 ## ETL pipeline
 
@@ -108,7 +110,7 @@ Here are some of the most interesting features used:
 - Postgres operator for connection to Redshift
 
 
-To run the Airflow ETL copy contents of [/airflow](airflow) folder to $AIRFLOW_HOME. The folder contains .py with DAG definition and plugins folder with one custom operator.
+To run the Airflow ETL copy contents of [airflow](airflow) folder to $AIRFLOW_HOME. The folder contains .py with DAG definition and plugins folder with one custom operator.
 
 
 ### Spark on EMR
@@ -162,7 +164,7 @@ Redshift is well suited for this. In case the query load gets too high we can in
 
 Note: Main focus of this project is the ETL pipeline toolchain. NLP algorithms such as language detection and sentiment analysis are included for demonstration only. Language detection appears to have worked quite well, but it is far from perfect. Quality of sentiment analysis is poor at best. Do not make any conclusions from the query results of the final model. 
 
-See the queries in [etl_notebooks/redshift-notebook.ipynb](etl_notebooks/redshift-notebook.ipynb)
+See the queries in [etl_notebooks/redshift-notebook.ipynb](etl_notebooks/redshift-etl-notebook.ipynb)
 
 Are there more positive or negative reviews of Airbnb stays?
 - About 97% of reviews were detected positive, while about 3% negative.
