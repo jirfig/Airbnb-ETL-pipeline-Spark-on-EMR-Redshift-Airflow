@@ -135,6 +135,9 @@ Here are some of the most interesting features used:
 - Postgres operator for connection to Redshift
 
 
+To run the Airflow ETL copy contents of /airflow folder to $AIRFLOW_HOME. The folder contains .py with DAG definition and plugins folder with one custom operator.
+
+
 ### Spark on EMR
 The ETL is executed automatically by Airflow, but it can also be run manually in jupyter notebooks, in both cases on EMR.
 
