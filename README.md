@@ -120,7 +120,7 @@ EMR cluster is created using AWS CLI command provided in [docs/aws_create_cluste
 
 Jupyter notebook [etl_notebooks/emr-etl-notebook.ipynb](etl_notebooks/emr-etl-notebook.ipynb) can be uploaded in EMR notebook workspace and directly executed cell-by-cell.
 							
-Airflow uses EmrAddStepsOperator to submit steps to EMR cluster. Each step is a .py file that contains identical code as implemented in [etl_notebooks/emr-etl-notebook.ipynb](etl_notebooks/emr-etl-notebook.ipynb), however it is split into five files stored in /apps folder.
+Airflow uses EmrAddStepsOperator to submit steps to EMR cluster. Each step is a .py file that contains identical code as implemented in [etl_notebooks/emr-etl-notebook.ipynb](etl_notebooks/emr-etl-notebook.ipynb), however it is split into five files stored in [apps](/apps) folder.
 Each .py file is run using spark-submit with execution date passed as argument to allow updating the dimensional model on monthly basis, exactly the frequency source data are available in.
 
 ```
