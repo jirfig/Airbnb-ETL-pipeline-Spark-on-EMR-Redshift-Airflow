@@ -160,6 +160,40 @@ Features used
 - create tables
 - copy tables from csv in s3
 
+## Challenges
+I would like to point out a few challenges I had to overcome.
+
+### 1. Updating reviews table was too slow in Spark
+
+Reviews table contains around 3m records, each monthly update contains some subset of the 3m records (since some reviews might have been removed from airbnb and thus are not scraped anymore) plus new additional reviews made during the last month.
+
+The reviews table already contains results of language detection and sentiment analysis, which are very resource heavy, therefore I wanted to avoid rerunning them on the duplicates from the monthly update. The most straightforward way is to filter review_id's which are only in the monthly update. Like this:
+```
+SELECT *
+FROM reviews_monthly
+WHERE reviews_monthly.id NOT IN
+     (SELECT reviews.review_id
+              FROM reviews)   
+```
+This turned out to be running over 2h on EMR with 2 worker instances, I did not wait for it to finish, if it ever would.
+
+I reimplemented this to filter by review date:
+```
+SELECT *
+FROM reviews_monthly
+WHERE reviews_monthly.date >= 
+    (SELECT max(reviews.date)
+     FROM reviews)  
+```
+The downside of the this approach is that it introduces duplicates. Reviews submitted at scrape_date for a given month can be incomplete, therefore its necessary to update them with next month's update and drop the duplicates.
+```
+df_reviews_updated = df_reviews_updated.dropDuplicates(["review_id"])
+```
+After reimplementation EMR takes mere seconds to go through this step.
+
+### 2. 
+### 3
+
 ## Discussion - other scenarios
 What if ..:
 - .. the data was increased by 100x?
