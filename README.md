@@ -11,7 +11,7 @@ This project is submitted as Capstone project of Udacity Data Engineer Nanodegre
 - [Dimensional model](#dimensional-model)
 - [Source data](#source-data)
 - [ETL pipeline](#etl-pipeline)
-- [Exploring-the-data](#exploring-the-data)
+- [Exploring the data](#exploring-the-data)
 
 
 ## Dimensional model
@@ -21,85 +21,58 @@ The model holds data about Airbnb listings, including their name, location, desc
 
 The model comprises five tables: fact table *reviews* and dimensional tables *reviewers*, *listings*, *hosts* and *weather*.
 
-Data dictionary ([link](/docs/data_dictionary.xlsx)) provides descriptions of the data, it is mostly a copy from Inside Airbnb's data dictionary that comes with the source data ([link](https://docs.google.com/spreadsheets/d/1iWCNJcSutYqpULSQHlNyGInUvHg2BoUGoNRIGa6Szc4/edit#gid=360684855))
+[Data dictionary](/docs/data_dictionary.xlsx) provides descriptions of the data, it is mostly a copy from [Inside Airbnb's data dictionary](https://docs.google.com/spreadsheets/d/1iWCNJcSutYqpULSQHlNyGInUvHg2BoUGoNRIGa6Szc4/edit#gid=360684855) that comes with the source data.
 
 Statistics (unique records):
-listings: 630731 records
-reviews: 3313766 records
-reviewers: 2788446 records
-hosts: 449889 records
-weather: 17888 records
+- listings: 630731 records
+- reviews: 3313766 records
+- reviewers: 2788446 records
+- hosts: 449889 records
+- weather: 17888 records
 
 Below is a summary of the most interesting columns:
 
-Reviews - fact table
-- review_id		
-- reviewer_id		
-- listing_id		
-- host_id		
-- weather_id		
-- date		
-- reviewer_name		
-- comments		
-- comment_language
-- sentiment		
-
-Reviewers
-- reviewer_id	
-- reviewer_name	
-- languages_spoken	
-
-Listings
-- city
-- description
-- first_review
-- host_id
-- listing_id
-- last_scraped
-- latitude
-- license
-- listing_url
-- longitude
-- name
-- picture_url
-- price
-- property_type
-- room_type
-...
-
-Hosts		
-- host_id	
-- host_name
-- host_url	
-- host_location
-- host_about	
-- host_picture_url
-- last_scraped
-...
-
-Weather
-- weather_id
-- date
-- temperature
-- rain
-- city
+|Reviews |Reviewers |Listings |Hosts | Weather|
+|--|--|--|--|--|
+|review_id	|			| 		|	 	| 		|	
+|reviewer_id	|	reviewer_id	|  		|  		|  		|
+|listing_id	|			|listing_id	|  		| 		|
+|host_id	|			|host_id	| host_id	| 		|
+|weather_id	|			|		| 		| weather_id	|
+|--|--|--|--|--|
+|date		|			|		| 		|date		|
+|reviewer_name	|	reviewer_name	|		| 		| 		|
+|		| 			|city		|		|city		|
+|		| 			|last_scraped	|last_scraped	|		|
+|--|--|--|--|--|
+|sentiment	|	languages_spoken|first_review	|host_name	|temperature	|
+|comment_language|			|longitude	|host_about	|rain		|
+|comments	| 			|latitude	|host_location	|		|
+|		| 			|name		|host_url	|		|
+|		|	 		|picture_url	|host_picture_url|		|
+|		| 			|price		|		|		|
+|		| 			|property_type	|		|		|
+|		| 			|room_type	|		|		|
+|		| 			|license	|		|		|
+|		| 			|listing_url	|		|		|
+|		| 			|description	|		|		|
 
 
 
 ## Source data
 There are 3 sources of data:
-- Inside Airbnb's listings and reviews data, scraped monthly ([link](http://insideairbnb.com/get-the-data.htm))
+- Inside Airbnb's listings and reviews data, scraped monthly [Download here.](http://insideairbnb.com/get-the-data.htm)
 	- period: January, February and March 2021
 	- cities: Amsterdam, Paris, London, Berlin
 	- format: csv
-- Airbnb listings data downloaded from opendatasoft, it contains ~490k unique listings from several dozen cities globally. Format: csv. ([link](https://public.opendatasoft.com/explore/dataset/airbnb-listings))
-- Weather data, daily mean temperature and daily rainfall from [ecad.eu](www.ecad.eu). Format: txt
+- Airbnb listings data downloaded from opendatasoft, it contains ~490k unique listings from several dozen cities globally. Format: csv. [Download here.](https://public.opendatasoft.com/explore/dataset/airbnb-listings)
+- Weather data, daily mean temperature and daily rainfall from ecadu.eu. Format: txt. [Download here.](www.ecad.eu)
 
 My usage of Inside Airbnb's data does not align perfectly with their mission, I can only say thank you and spread the word, check them out at [http://insideairbnb.com/](http://insideairbnb.com/)
 
 Total size of the source data is 5.8 GB, total number of records ~14.7 million. However, many of the records are duplicates.
 
-## ETL
+## ETL pipeline
 
 ETL comprises three parts
 - Part I: preprocess raw data into parquet files
@@ -107,15 +80,15 @@ ETL comprises three parts
 - Part III: create Redshift model and copy in the data
 
 In Part I raw data stored in csv and txt files are read using Apache Spark and with minimal transformation saved into parquet files, columnar format more suitable for fast reads. Minimal transformations include dropping columns, removing multiline headers from txt files and extracting city name from filepath of the data.
-![aad4c993d14a3bac915ec1f0c94b0fec.png](:/docs/4943733d646b4c28a315181eb5103046)
+![aad4c993d14a3bac915ec1f0c94b0fec.png](/docs/4943733d646b4c28a315181eb5103046.png)
 
 In Part II Spark reads preprocessed parquet files and transforms them into the final dimensional model tables in csv format. Transformations performed include: joining tables using join and union operations, filtering using window functions, and dropping duplicates. Natural language processing models from Spark-NLP library is used for language detection of Airbnb reviews and sentiment analysis is performed on the english subset of the comments.
 
-![ef7b77807ea5cec5093eb96b123742eb.png](:/docs/1ec3df8c6acb49bebf63ea50c586e4eb)
-![3513c58181a46054bed77483798b53bd.png](:/docs/b9f78672a19c488aa7aa354858171591)
+![ef7b77807ea5cec5093eb96b123742eb.png](/docs/1ec3df8c6acb49bebf63ea50c586e4eb.png)
+![3513c58181a46054bed77483798b53bd.png](/docs/b9f78672a19c488aa7aa354858171591.png)
 
 In Part III dimensional model is created in Redshift database and copy queries are run to load the csv data from Part II.
-![redshift.png](:/docs/202d111fd6204ca9b82415cbc432f718)
+![redshift.png](/docs/202d111fd6204ca9b82415cbc432f718.png)
 
 
 
@@ -135,15 +108,15 @@ Here are some of the most interesting features used:
 - Postgres operator for connection to Redshift
 
 
-To run the Airflow ETL copy contents of /airflow folder to $AIRFLOW_HOME. The folder contains .py with DAG definition and plugins folder with one custom operator.
+To run the Airflow ETL copy contents of [/airflow](airflow) folder to $AIRFLOW_HOME. The folder contains .py with DAG definition and plugins folder with one custom operator.
 
 
 ### Spark on EMR
 The ETL is executed automatically by Airflow, but it can also be run manually in jupyter notebooks, in both cases on EMR.
 
-EMR cluster is created using AWS CLI command provided in docs/aws_create_cluster.txt, bootstrap file and spark configuration are in config/emr-bootstrap.sh and config/spark-config.json, respectively.
+EMR cluster is created using AWS CLI command provided in [docs/aws_create_cluster.txt](docs/aws_create_cluster.txt), bootstrap file and spark configuration are in [config/emr-bootstrap.sh](config/emr-bootstrap.sh) and [config/spark-config.json](), respectively.
 
-Jupyter notebook /etl-notebooks/emr-etl-notebook.ipynb can be uploaded in EMR notebook workspace and directly executed cell-by-cell.
+Jupyter notebook [etl-notebooks/emr-etl-notebook.ipynb](etl-notebooks/emr-etl-notebook.ipynb) can be uploaded in EMR notebook workspace and directly executed cell-by-cell.
 
 Airflow uses EmrAddStepsOperator to submit steps to EMR cluster. Each step is a .py file that contains identical code as implemented in /notebooks/emr-etl-notebook.ipynb, however it is split into five files stored in /apps folder.
 Each .py file is run using spark-submit with execution date passed as argument to allow updating the dimensional model on monthly basis, exactly the frequency source data are available in.
@@ -187,9 +160,9 @@ Redshift is well suited for this. In case the query load gets too high we can in
 
 ## Exploring the data
 
-Note: Main focus of this project is the ETL pipeline toolchain. NLP algorithms such as language detection and sentiment analysis are included for demonstration only. Language detection appears to have worked quite well, but its far from perfect. Quality of sentiment analysis is poor at best. Don't make any conclusions from the query results of the final model. 
+Note: Main focus of this project is the ETL pipeline toolchain. NLP algorithms such as language detection and sentiment analysis are included for demonstration only. Language detection appears to have worked quite well, but it is far from perfect. Quality of sentiment analysis is poor at best. Do not make any conclusions from the query results of the final model. 
 
-See the queries in etl-notebooks/redshift-notebook.ipynb
+See the queries in [etl-notebooks/redshift-notebook.ipynb](etl-notebooks/redshift-notebook.ipynb)
 
 Are there more positive or negative reviews of Airbnb stays?
 - About 97% of reviews were detected positive, while about 3% negative.
@@ -206,9 +179,8 @@ Are there hosts with listings in multiple cities?
 How many guests visited more than one city?
 Looking at Amsterdam, Paris, London and Berlin, most guest stayed with Airbnb in just one of the cities, just 319 visited them all.
 
-|||
-|--|--|
 |cities_visited |	count|
+|--|--|
 |4 | 	319|
 |3 |	7525|
 |2 |	132009|
