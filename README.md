@@ -154,9 +154,9 @@ process_weather_wait = EmrStepSensor(
 
 Example runtime:
 - Creating dimensional model from scratch using January 2021 monthly data.
-- Master:1x m5.xlarge
-- Core:8x m5.xlarge
-- Configuration: [config/spark-config.json](config/spark-config.json) with "spark.executor.instances": "8",
+- Master: 1x m5.xlarge
+- Core: 8x m5.xlarge
+- Configuration: [config/spark-config.json](config/spark-config.json) with spark.executor.instances: 8,
 
 | Step| Runtime|
 |--|--|
