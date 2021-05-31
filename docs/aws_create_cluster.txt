@@ -1,3 +1,4 @@
+# EMR
 aws emr create-cluster \
 --name "Capstone" \
 --release-label emr-6.2.0 \
@@ -9,3 +10,14 @@ aws emr create-cluster \
 --bootstrap-actions Path="s3://airbnbprj-us/config/emr-bootstrap.sh" \
 --configurations file:///home/jiri/path/config/spark-config.json \
 --ec2-attributes SubnetIds=subnet-08b68449098282765,KeyName=EC2_30-04-21
+
+# Redshift
+aws redshift create-cluster \
+--db-name FILL_IN \
+--port 5439 \
+--cluster-identifier FILL_IN \
+--cluster-type single-node \
+--node-type dc2.large \
+--vpc-security-group-ids FILL_IN \
+--master-username FILL_IN \
+--master-user-password FILL_IN
