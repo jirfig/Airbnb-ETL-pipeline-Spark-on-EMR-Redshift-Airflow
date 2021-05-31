@@ -112,6 +112,8 @@ Here are some of the most interesting features used:
 
 To run the Airflow ETL copy contents of [airflow](airflow) folder to $AIRFLOW_HOME. The folder contains .py with DAG definition and plugins folder with one custom operator.
 
+![](docs/dag_complete.png)
+
 
 ### Spark on EMR
 The ETL is executed automatically by Airflow, but it can also be run manually in jupyter notebooks, in both cases on EMR.
