@@ -152,6 +152,14 @@ process_weather_wait = EmrStepSensor(
 )
 ```
 
+### Redshift
+Redshift cluster can be created using AWS CLI command from [docs/aws_create_cluster.txt](docs/aws_create_cluster.txt). It turned out that single-node Redshift cluster is sufficient for this project. The last part of the ETL where Redshift database is created and loaded with data is implemented in [etl_notebooks/redshift-notebook.ipynb](etl_notebooks/redshift-etl-notebook.ipynb) and in [airbnb-etl-airflow.py](airflow/AIRFLOW_HOME/dags/airbnb-etl-airflow.py). 
+
+Features used
+- interaction with Airflow using Postgres operator and customized s3_to_redshift operator
+- create tables
+- copy tables from csv in s3
+
 ## Discussion - other scenarios
 What if ..:
 - .. the data was increased by 100x?
