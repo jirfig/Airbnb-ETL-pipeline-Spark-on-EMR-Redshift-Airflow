@@ -214,14 +214,35 @@ After reimplementation EMR takes mere seconds to go through this step.
 ### 3. Redshift copy was failing
 My initial attempts to copy data to Redshift were failing. I found out that Redshift provides a table that logs the errors called `stl_load_errors`. I queried the table to understand the root cause. It turned out that some some text fields were too long for 'varchar' type, which supports only 256 bytes at default. I changed to type to varchar(max) to fix it.
 
-## Discussion - other scenarios
-What if ..:
-- .. the data was increased by 100x?
-The ETL is designed robustly, increasing the data size by 100x, 1000x or even more is just a question of calibration of EMR and Redshift cluster size and hardware.
-- .. the pipelines would be run on a daily basis by 7 am every day?
-The ETL is orchestrated by Apache Airflow, its just a question of calibration to run it instead of monthly with daily frequency. Although it would not make much sense given that the source data come partitioned monthly, its absolutely possible.
-- .. the database needed to be accessed by 100+ people?
-Redshift is well suited for this. In case the query load gets too high we can increase the cluster size or choose better hardware, manually optimize distribution and sort keys, or prepare materialized views for frequent queries.
+## How to run the project
+Code is executed in three environments:
+
+1. EMR cluster
+- [etl_notebooks/emr-etl-notebook.ipynb](etl_notebooks/emr-etl-notebook.ipynb) 
+- [etl_notebooks/emr-etl-test-notebook.ipynb](etl_notebooks/emr-etl-test-notebook.ipynb) 
+
+Cluster configuration is described in [docs/aws_create_cluster.txt](docs/aws_create_cluster.txt), bootstrap file is in [config/emr-bootstrap.sh](config/emr-bootstrap.sh) and Spark configuration in [config/spark-config.json](config/spark-config.json).
+
+2. Local
+- [etl_notebooks/redshift-notebook.ipynb](etl_notebooks/redshift-etl-notebook.ipynb)
+- [get_original_data.ipynb](get_original_data.ipynb) 
+- [upload_to_s3.ipynb](upload_to_s3.ipynb)
+
+Two options to run:
+1. without Docker
+- install dependecies in [/docker/requirements.txt](/docker/requirements.txt)
+
+2. using Docker
+
+Build new image with jupyter lab installed and run it:
+```
+$ cd <root of the repo>
+$ docker build --tag airbnb-etl docker/
+$ docker run -p 8888:8888 -v $(pwd):/home/jovyan airbnb-etl
+```
+
+3. Airflow
+Tested to work with Airflow 1.10.9 using LocalExecutor with Postgres 9.6.
 
 
 ## Exploring the data
