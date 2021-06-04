@@ -215,15 +215,15 @@ After reimplementation EMR takes mere seconds to go through this step.
 My initial attempts to copy data to Redshift were failing. I found out that Redshift provides a table that logs the errors called `stl_load_errors`. I queried the table to understand the root cause. It turned out that some some text fields were too long for 'varchar' type, which supports only 256 bytes at default. I changed to type to varchar(max) to fix it.
 
 ## How to run the project
-Code is executed in three environments:
+There are three different environments:
 
-1. EMR cluster
+### 1. EMR cluster
 - [etl_notebooks/emr-etl-notebook.ipynb](etl_notebooks/emr-etl-notebook.ipynb) 
 - [etl_notebooks/emr-etl-test-notebook.ipynb](etl_notebooks/emr-etl-test-notebook.ipynb) 
 
 Cluster configuration is described in [docs/aws_create_cluster.txt](docs/aws_create_cluster.txt), bootstrap file is in [config/emr-bootstrap.sh](config/emr-bootstrap.sh) and Spark configuration in [config/spark-config.json](config/spark-config.json).
 
-2. Local
+### 2. Local
 - [etl_notebooks/redshift-notebook.ipynb](etl_notebooks/redshift-etl-notebook.ipynb)
 - [get_original_data.ipynb](get_original_data.ipynb) 
 - [upload_to_s3.ipynb](upload_to_s3.ipynb)
@@ -234,16 +234,19 @@ Two options to run:
 
 2. using Docker
 
-Build new image with jupyter lab installed and run it:
+Build new image with jupyter lab and run it:
 ```
 $ cd <root of the repo>
 $ docker build --tag airbnb-etl docker/
 $ docker run -p 8888:8888 -v $(pwd):/home/jovyan airbnb-etl
 ```
 
-3. Airflow
-Tested to work with Airflow 1.10.9 using LocalExecutor with Postgres 9.6.
-
+### 3. Airflow
+Works with Python 3.7.10, Airflow 1.10.9 using LocalExecutor with Postgres 9.6.
+```
+pip install apache-airflow[postgres,aws]==1.10.9
+pip install sqlalchemy==1.3.15
+```
 
 ## Exploring the data
 
