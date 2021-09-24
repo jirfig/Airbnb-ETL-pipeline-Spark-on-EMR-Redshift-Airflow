@@ -6,6 +6,8 @@ Goal of this project is to prepare data that can answer all the questions above 
 
 This project is submitted as Capstone project of Udacity Data Engineer Nanodegree program.
 
+See also my extension project [Airbnb ETL pipeline: Spark(Scala) in Databricks & Airflow](https://github.com/jirfig/Airbnb-ETL-pipeline-Spark-Scala-in-Databricks-Airflow), which uses different tools to accomplish the same goal.
+
 ## Table of contents
 
 - [Dimensional model](#dimensional-model)
