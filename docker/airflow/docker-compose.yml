@@ -19,6 +19,9 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      _PIP_ADDITIONAL_REQUIREMENTS: >-
+        apache-airflow-providers-amazon
+        apache-airflow-providers-postgres
     volumes:
       - ../../airflow/AIRFLOW_HOME/dags:/opt/airflow/dags
       - ../../airflow/AIRFLOW_HOME/plugins:/opt/airflow/plugins
@@ -37,6 +40,9 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      _PIP_ADDITIONAL_REQUIREMENTS: >-
+        apache-airflow-providers-amazon
+        apache-airflow-providers-postgres
     volumes:
       - ../../airflow/AIRFLOW_HOME/dags:/opt/airflow/dags
       - ../../airflow/AIRFLOW_HOME/plugins:/opt/airflow/plugins

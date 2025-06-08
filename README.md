@@ -113,7 +113,7 @@ Here are some of the most interesting features used:
 
 
 To run the Airflow ETL copy contents of [airflow](airflow) folder to `$AIRFLOW_HOME` or use the docker compose setup in `docker/airflow`.
-The folder contains `.py` with DAG definition and plugins folder with one custom operator. The compose file initializes the database using an `airflow-init` service before starting Airflow.
+The folder contains `.py` with DAG definition and plugins folder with one custom operator. The compose file initializes the database using an `airflow-init` service and installs the needed providers before starting Airflow.
 
 ![](docs/dag_complete.png)
 
@@ -247,7 +247,8 @@ $ docker run -p 8888:8888 -v $(pwd):/home/jovyan airbnb-etl
 ### 3. Airflow
 The project now uses Airflow 2.11. A docker compose file is provided to run the
 DAG locally. The metadata database is initialized automatically using the
-`airflow-init` service.
+`airflow-init` service and installs the required Amazon and Postgres provider
+packages.
 
 ```
 $ docker compose -f docker/airflow/docker-compose.yml up
