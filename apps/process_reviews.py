@@ -123,16 +123,26 @@ def main():
     # Detect language, translate, detect sentiment
     #spark = sparknlp.start()
     language_detector = PretrainedPipeline('detect_language_220', lang='xx')
-    df_result = language_detector.annotate(df_reviews_delta, column="comments")
-    df_reviews_delta2 = df_result.withColumn("comment_language", F.concat_ws(",",F.col("language.result"))).drop("document").drop("sentence").drop("language").withColumnRenamed('text','comments')
+    df_result = language_detector.transform(df_reviews_delta)
+    df_reviews_delta2 = df_result.withColumn(
+        "comment_language",
+        F.concat_ws(",", F.col("language.result"))
+    ).drop("document").drop("sentence").drop("language") \
+     .withColumnRenamed('text', 'comments')
 
     df_reviews_delta2.write.csv(dim_model_reviews_step2, escape='"', header="true")        
 
     df_reviews_delta2 = spark.read.csv(dim_model_reviews_step2,header="True", inferSchema="True",multiLine="True",escape='"',ignoreLeadingWhiteSpace="True")
 
     sentiment_analyzer = PretrainedPipeline('analyze_sentimentdl_use_imdb', lang='en')
-    df_result_sentiment = sentiment_analyzer.annotate(df_reviews_delta2.filter(F.col("comment_language") == 'en'), column="comments")
-    df_result_sentiment = df_result_sentiment.withColumn("sentiment", F.concat_ws(",",F.col("sentiment.result"))).drop("document").drop("sentence_embeddings").withColumnRenamed('text','comments')
+    df_result_sentiment = sentiment_analyzer.transform(
+        df_reviews_delta2.filter(F.col("comment_language") == 'en')
+    )
+    df_result_sentiment = df_result_sentiment.withColumn(
+        "sentiment",
+        F.concat_ws(",", F.col("sentiment.result"))
+    ).drop("document").drop("sentence_embeddings") \
+     .withColumnRenamed('text', 'comments')
 
     df_reviews_null = df_reviews_delta2.filter("comment_language is null").withColumn("sentiment", F.lit('n/a'))
     df_reviews_delta3 = df_reviews_delta2.filter("comment_language != 'en'").withColumn("sentiment", F.lit('n/a'))\
