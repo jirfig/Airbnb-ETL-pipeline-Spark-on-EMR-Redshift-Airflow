@@ -257,6 +257,23 @@ $ docker compose -f docker/airflow/docker-compose.yml up
 The web UI will be available at http://localhost:8080 (credentials
 `admin`/`admin`).
 
+### Development
+
+The project uses [Ruff](https://docs.astral.sh/ruff/) for linting and
+formatting. Install the pre-commit hooks to ensure Ruff runs on every
+commit:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+You can run all checks manually with:
+
+```bash
+pre-commit run --all-files
+```
+
 ## Exploring the data
 
 Note: Main focus of this project is the ETL pipeline toolchain. NLP algorithms such as language detection and sentiment analysis are included for demonstration only. Language detection appears to have worked quite well, but it is far from perfect. Quality of sentiment analysis is poor at best. Do not make any conclusions from the query results of the final model. 

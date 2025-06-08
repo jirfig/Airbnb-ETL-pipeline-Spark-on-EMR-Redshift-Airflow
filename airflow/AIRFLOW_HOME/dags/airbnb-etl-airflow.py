@@ -1,29 +1,26 @@
+import logging
 from datetime import datetime, timedelta
-from airflow import DAG
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import PythonOperator
-from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.providers.amazon.aws.operators.emr import EmrAddStepsOperator
-from airflow.providers.amazon.aws.sensors.emr import EmrStepSensor
-from airflow.providers.amazon.aws.hooks.emr import EmrHook
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 from operators.s3_to_redshift_operator import S3ToRedshiftTransfer_custom
 
+from airflow import DAG
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
+from airflow.providers.amazon.aws.hooks.emr import EmrHook
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.providers.amazon.aws.operators.emr import EmrAddStepsOperator
+from airflow.providers.amazon.aws.sensors.emr import EmrStepSensor
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.postgres.operators.postgres import PostgresOperator
 
-import boto3
-import logging
-
-
-## Paths    
-TEST = False    
+## Paths
+TEST = False
 scrape_year_month = '{{ execution_date.strftime("%Y-%m") }}'
 
 # S3
-path_global_listings = 'airbnb-listings.csv'
-path_city_listings = f'cities/*/{scrape_year_month}/listings.csv'    
-path_city_reviews = f'cities/*/{scrape_year_month}/reviews.csv'
+path_global_listings = "airbnb-listings.csv"
+path_city_listings = f"cities/*/{scrape_year_month}/listings.csv"
+path_city_reviews = f"cities/*/{scrape_year_month}/reviews.csv"
 
 path_city_temperature = "weather/ECA_blend_tg/*.txt"
 path_city_rain = "weather/ECA_blend_rr/*.txt"
@@ -50,301 +47,320 @@ raw_city_reviews_path = s3_path.format(bucket_name, raw_data_folder, path_city_r
 raw_city_temperature_path = s3_path.format(bucket_name, raw_data_folder, path_city_temperature)
 raw_city_rain_data_path = s3_path.format(bucket_name, raw_data_folder, path_city_rain)
 
-path_out_global_listings = s3_path.format(bucket_name, input_parquet_folder, 'global_listings.parquet')
-path_out_city_listings_data = s3_path.format(bucket_name, input_parquet_folder, f'city_listings/{scrape_year_month}/city_listings.parquet')
-path_out_city_reviews_data = s3_path.format(bucket_name, input_parquet_folder, f'city_reviews/{scrape_year_month}/city_reviews.parquet')
-path_out_city_temperature_data = s3_path.format(bucket_name, input_parquet_folder, 'city_temperature.parquet')
-path_out_city_rain_data = s3_path.format(bucket_name, input_parquet_folder, 'city_rain.parquet')
-path_out_weather_stations = s3_path.format(bucket_name, input_parquet_folder, 'weather_stations.parquet')
+path_out_global_listings = s3_path.format(bucket_name, input_parquet_folder, "global_listings.parquet")
+path_out_city_listings_data = s3_path.format(
+    bucket_name, input_parquet_folder, f"city_listings/{scrape_year_month}/city_listings.parquet"
+)
+path_out_city_reviews_data = s3_path.format(
+    bucket_name, input_parquet_folder, f"city_reviews/{scrape_year_month}/city_reviews.parquet"
+)
+path_out_city_temperature_data = s3_path.format(bucket_name, input_parquet_folder, "city_temperature.parquet")
+path_out_city_rain_data = s3_path.format(bucket_name, input_parquet_folder, "city_rain.parquet")
+path_out_weather_stations = s3_path.format(bucket_name, input_parquet_folder, "weather_stations.parquet")
 
-dim_model_listings = s3_path.format(bucket_name, dim_model_folder, 'listings.csv')
-dim_model_hosts = s3_path.format(bucket_name, dim_model_folder, 'hosts.csv')
-dim_model_reviews = s3_path.format(bucket_name, dim_model_folder, 'reviews.csv')
-dim_model_reviewers = s3_path.format(bucket_name, dim_model_folder, 'reviewers.csv')
-dim_model_weather = s3_path.format(bucket_name, dim_model_folder, 'weather.csv')
+dim_model_listings = s3_path.format(bucket_name, dim_model_folder, "listings.csv")
+dim_model_hosts = s3_path.format(bucket_name, dim_model_folder, "hosts.csv")
+dim_model_reviews = s3_path.format(bucket_name, dim_model_folder, "reviews.csv")
+dim_model_reviewers = s3_path.format(bucket_name, dim_model_folder, "reviewers.csv")
+dim_model_weather = s3_path.format(bucket_name, dim_model_folder, "weather.csv")
 
-dim_model_listings_new = s3_path.format(bucket_name, dim_model_folder_new, 'listings.csv')
-dim_model_hosts_new = s3_path.format(bucket_name, dim_model_folder_new, 'hosts.csv')
-dim_model_reviews_new = s3_path.format(bucket_name, dim_model_folder_new, 'reviews.csv')
-dim_model_reviewers_new = s3_path.format(bucket_name, dim_model_folder_new, 'reviewers.csv')
-dim_model_weather_new = s3_path.format(bucket_name, dim_model_folder_new, 'weather.csv')
+dim_model_listings_new = s3_path.format(bucket_name, dim_model_folder_new, "listings.csv")
+dim_model_hosts_new = s3_path.format(bucket_name, dim_model_folder_new, "hosts.csv")
+dim_model_reviews_new = s3_path.format(bucket_name, dim_model_folder_new, "reviews.csv")
+dim_model_reviewers_new = s3_path.format(bucket_name, dim_model_folder_new, "reviewers.csv")
+dim_model_weather_new = s3_path.format(bucket_name, dim_model_folder_new, "weather.csv")
 
-dim_model_reviews_step1 = s3_path.format(bucket_name, dim_model_folder_new, 'reviews_step1.csv')
-dim_model_reviews_step2 = s3_path.format(bucket_name, dim_model_folder_new, 'reviews_step2.csv')
+dim_model_reviews_step1 = s3_path.format(bucket_name, dim_model_folder_new, "reviews_step1.csv")
+dim_model_reviews_step2 = s3_path.format(bucket_name, dim_model_folder_new, "reviews_step2.csv")
 ##
 
 
-
-EMR_CLUSTER_NAME='Capstone'
+EMR_CLUSTER_NAME = "Capstone"
 
 
 default_args = {
-    'owner': 'Jiri',
-    'start_date': datetime(2021, 1, 1),
-    'end_date': datetime(2021, 3, 2),
-    'retries': 3,
-    'retry_delay': timedelta(minutes=5),
-    'email_on_retry': False,    
-    'depends_on_past': False    
+    "owner": "Jiri",
+    "start_date": datetime(2021, 1, 1),
+    "end_date": datetime(2021, 3, 2),
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
+    "email_on_retry": False,
+    "depends_on_past": False,
 }
 
-dag = DAG('Airbnb-etl',
-          default_args=default_args,
-          catchup = True,
-          description='Airbnb ETL pipeline: Spark on EMR, Redshift & Airflow',
-          schedule_interval='@monthly',
-          max_active_runs=1
-        )
+dag = DAG(
+    "Airbnb-etl",
+    default_args=default_args,
+    catchup=True,
+    description="Airbnb ETL pipeline: Spark on EMR, Redshift & Airflow",
+    schedule_interval="@monthly",
+    max_active_runs=1,
+)
 
 
-def get_cluster(): 
-    "Get EMR cluster id"   
-    emr_hook = EmrHook('aws_default')
-    cluster_id = emr_hook.get_cluster_id_by_name(EMR_CLUSTER_NAME, ['RUNNING', 'WAITING'])
-    if cluster_id == None:
+def get_cluster():
+    "Get EMR cluster id"
+    emr_hook = EmrHook("aws_default")
+    cluster_id = emr_hook.get_cluster_id_by_name(EMR_CLUSTER_NAME, ["RUNNING", "WAITING"])
+    if cluster_id is None:
         raise ValueError(f"Cluster {EMR_CLUSTER_NAME} is not available")
     return cluster_id
 
+
 def path_exists(*op_args):
     "Check if keys in S3 bucket exist"
-    s3_hook = S3Hook('aws_default')
+    s3_hook = S3Hook("aws_default")
     for path in op_args:
-        val = s3_hook.check_for_prefix(bucket_name, path.replace(f"s3://{bucket_name}/",""),"/")   
-        if val == False:
-            raise ValueError(f"Path {path} is empty") 
+        val = s3_hook.check_for_prefix(bucket_name, path.replace(f"s3://{bucket_name}/", ""), "/")
+        if val is False:
+            raise ValueError(f"Path {path} is empty")
+
 
 def update_dim_model():
     "Delete the dimensional model and move in new dimensional model from 'temporary' folder"
-    s3_hook = S3Hook('aws_default')
+    s3_hook = S3Hook("aws_default")
     keys_new_model = s3_hook.list_keys(bucket_name, prefix=dim_model_folder_new)
     if keys_new_model is None:
         raise ValueError("There is no model to update")
 
-    keys_old_model = s3_hook.list_keys(bucket_name, prefix=dim_model_folder+"/")
+    keys_old_model = s3_hook.list_keys(bucket_name, prefix=dim_model_folder + "/")
     if keys_old_model is not None:
         for key in keys_old_model:
             s3_hook.delete_objects(bucket_name, key)
 
     for key in keys_new_model:
-        s3_hook.copy_object(key,
-                    key.replace(dim_model_folder_new,dim_model_folder),
-                    source_bucket_name=bucket_name,
-                    dest_bucket_name=bucket_name)
-    
+        s3_hook.copy_object(
+            key,
+            key.replace(dim_model_folder_new, dim_model_folder),
+            source_bucket_name=bucket_name,
+            dest_bucket_name=bucket_name,
+        )
+
     for key in keys_new_model:
         s3_hook.delete_objects(bucket_name, key)
 
+
 def check_redshift_loaded():
     "Check that all tables of dimensional models contain records"
-    redshift_hook = PostgresHook('redshift_default')
-    for table in ['listings', 'reviews', 'reviewers', 'hosts', 'weather']:
-        records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {table}")    
+    redshift_hook = PostgresHook("redshift_default")
+    for table in ["listings", "reviews", "reviewers", "hosts", "weather"]:
+        records = redshift_hook.get_records(f"SELECT COUNT(*) FROM {table}")
         if len(records) < 1 or len(records[0]) < 1:
             raise ValueError(f"Data quality check failed. {table} returned no results")
-        num_records = records[0][0]    
+        num_records = records[0][0]
         if num_records < 1:
             raise ValueError(f"Data quality on table {table} check failed, no records in the table")
         logging.info(f"Data quality on table {table} check passed with {records[0][0]} records")
 
 
-
-start_operator = PythonOperator(
-    task_id='begin_execution', 
-    python_callable=get_cluster,
-    dag=dag)
+start_operator = PythonOperator(task_id="begin_execution", python_callable=get_cluster, dag=dag)
 
 preprocess_data_submit = EmrAddStepsOperator(
-    task_id='preprocess_data_submit',
+    task_id="preprocess_data_submit",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
-    aws_conn_id='aws_default',
+    aws_conn_id="aws_default",
     steps=[
-            {
-                'Name': 'preprocess_data',
-                'ActionOnFailure': 'CONTINUE',
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': ["spark-submit","--master","yarn", \
-                                            "--deploy-mode", "client", \
-                                            "s3://airbnbprj-us/apps/preprocess_data.py",'{{ execution_date.strftime("%Y-%m") }}']
-                                            
-                },
-            }
-    ],   
-    dag=dag
+        {
+            "Name": "preprocess_data",
+            "ActionOnFailure": "CONTINUE",
+            "HadoopJarStep": {
+                "Jar": "command-runner.jar",
+                "Args": [
+                    "spark-submit",
+                    "--master",
+                    "yarn",
+                    "--deploy-mode",
+                    "client",
+                    "s3://airbnbprj-us/apps/preprocess_data.py",
+                    '{{ execution_date.strftime("%Y-%m") }}',
+                ],
+            },
+        }
+    ],
+    dag=dag,
 )
 
 preprocess_data_wait = EmrStepSensor(
-    task_id='preprocess_data_wait',
+    task_id="preprocess_data_wait",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
     step_id="{{ task_instance.xcom_pull(task_ids='preprocess_data_submit', key='return_value')[0] }}",
-    aws_conn_id='aws_default',
-    dag=dag
+    aws_conn_id="aws_default",
+    dag=dag,
 )
 
 preprocess_data_check = PythonOperator(
-    task_id='preprocess_data_check', 
-    python_callable=path_exists, 
-    op_args=[path_out_global_listings,
-             path_out_city_listings_data,
-             path_out_city_reviews_data,
-             path_out_city_temperature_data,
-             path_out_city_rain_data,
-             path_out_weather_stations],      
-    dag=dag    
+    task_id="preprocess_data_check",
+    python_callable=path_exists,
+    op_args=[
+        path_out_global_listings,
+        path_out_city_listings_data,
+        path_out_city_reviews_data,
+        path_out_city_temperature_data,
+        path_out_city_rain_data,
+        path_out_weather_stations,
+    ],
+    dag=dag,
 )
 
 
 process_listings_hosts_submit = EmrAddStepsOperator(
-    task_id='process_listings_hosts_submit',
+    task_id="process_listings_hosts_submit",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
-    aws_conn_id='aws_default',
+    aws_conn_id="aws_default",
     steps=[
-            {
-                'Name': 'process_listings_hosts',
-                'ActionOnFailure': 'CONTINUE',
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': ["spark-submit","--master","yarn", \
-                                            "--deploy-mode", "client", \
-                                            "s3://airbnbprj-us/apps/process_listings_hosts.py",'{{ execution_date.strftime("%Y-%m") }}']
-                                            
-                },
-            }
-    ],   
-    dag=dag
+        {
+            "Name": "process_listings_hosts",
+            "ActionOnFailure": "CONTINUE",
+            "HadoopJarStep": {
+                "Jar": "command-runner.jar",
+                "Args": [
+                    "spark-submit",
+                    "--master",
+                    "yarn",
+                    "--deploy-mode",
+                    "client",
+                    "s3://airbnbprj-us/apps/process_listings_hosts.py",
+                    '{{ execution_date.strftime("%Y-%m") }}',
+                ],
+            },
+        }
+    ],
+    dag=dag,
 )
 
 process_listings_hosts_wait = EmrStepSensor(
-    task_id='process_listings_hosts_wait',
+    task_id="process_listings_hosts_wait",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
     step_id="{{ task_instance.xcom_pull(task_ids='process_listings_hosts_submit', key='return_value')[0] }}",
-    aws_conn_id='aws_default',
-    dag=dag
+    aws_conn_id="aws_default",
+    dag=dag,
 )
 
 listings_hosts_check = PythonOperator(
-    task_id='listings_hosts_check', 
-    python_callable=path_exists,  
-    op_args=[dim_model_listings_new,
-             dim_model_hosts_new],      
-    dag=dag    
+    task_id="listings_hosts_check",
+    python_callable=path_exists,
+    op_args=[dim_model_listings_new, dim_model_hosts_new],
+    dag=dag,
 )
 
 process_reviews_submit = EmrAddStepsOperator(
-    task_id='process_reviews_submit',
+    task_id="process_reviews_submit",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
-    aws_conn_id='aws_default',
+    aws_conn_id="aws_default",
     steps=[
-            {
-                'Name': 'process_reviews_submit',
-                'ActionOnFailure': 'CONTINUE',
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': ["spark-submit","--master","yarn", \
-                                            "--deploy-mode", "client", \
-                                            "s3://airbnbprj-us/apps/process_reviews.py",'{{ execution_date.strftime("%Y-%m") }}']
-                                            
-                },
-            }
-    ],   
-    dag=dag
+        {
+            "Name": "process_reviews_submit",
+            "ActionOnFailure": "CONTINUE",
+            "HadoopJarStep": {
+                "Jar": "command-runner.jar",
+                "Args": [
+                    "spark-submit",
+                    "--master",
+                    "yarn",
+                    "--deploy-mode",
+                    "client",
+                    "s3://airbnbprj-us/apps/process_reviews.py",
+                    '{{ execution_date.strftime("%Y-%m") }}',
+                ],
+            },
+        }
+    ],
+    dag=dag,
 )
 
 process_reviews_wait = EmrStepSensor(
-    task_id='process_reviews_wait',
+    task_id="process_reviews_wait",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
     step_id="{{ task_instance.xcom_pull(task_ids='process_reviews_submit', key='return_value')[0] }}",
-    aws_conn_id='aws_default',
-    dag=dag
+    aws_conn_id="aws_default",
+    dag=dag,
 )
 
 reviews_check = PythonOperator(
-    task_id='reviews_check', 
-    python_callable=path_exists,  
-    op_args=[dim_model_reviews_new],      
-    dag=dag    
+    task_id="reviews_check", python_callable=path_exists, op_args=[dim_model_reviews_new], dag=dag
 )
 
 
 process_reviewers_submit = EmrAddStepsOperator(
-    task_id='process_reviewers_submit',
+    task_id="process_reviewers_submit",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
-    aws_conn_id='aws_default',
+    aws_conn_id="aws_default",
     steps=[
-            {
-                'Name': 'process_reviewers_submit',
-                'ActionOnFailure': 'CONTINUE',
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': ["spark-submit","--master","yarn", \
-                                            "--deploy-mode", "client", \
-                                            "s3://airbnbprj-us/apps/process_reviewers.py",'{{ execution_date.strftime("%Y-%m") }}']
-                                            
-                },
-            }
-    ],   
-    dag=dag
+        {
+            "Name": "process_reviewers_submit",
+            "ActionOnFailure": "CONTINUE",
+            "HadoopJarStep": {
+                "Jar": "command-runner.jar",
+                "Args": [
+                    "spark-submit",
+                    "--master",
+                    "yarn",
+                    "--deploy-mode",
+                    "client",
+                    "s3://airbnbprj-us/apps/process_reviewers.py",
+                    '{{ execution_date.strftime("%Y-%m") }}',
+                ],
+            },
+        }
+    ],
+    dag=dag,
 )
 
 process_reviewers_wait = EmrStepSensor(
-    task_id='process_reviewers_wait',
+    task_id="process_reviewers_wait",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
     step_id="{{ task_instance.xcom_pull(task_ids='process_reviewers_submit', key='return_value')[0] }}",
-    aws_conn_id='aws_default',
-    dag=dag
+    aws_conn_id="aws_default",
+    dag=dag,
 )
 
 reviewers_check = PythonOperator(
-    task_id='reviewers_check', 
-    python_callable=path_exists,  
-    op_args=[dim_model_reviewers_new],      
-    dag=dag    
+    task_id="reviewers_check", python_callable=path_exists, op_args=[dim_model_reviewers_new], dag=dag
 )
 
 
 process_weather_submit = EmrAddStepsOperator(
-    task_id='process_weather_submit',
+    task_id="process_weather_submit",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
-    aws_conn_id='aws_default',
+    aws_conn_id="aws_default",
     steps=[
-            {
-                'Name': 'process_weather_submit',
-                'ActionOnFailure': 'CONTINUE',
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': ["spark-submit","--master","yarn", \
-                                            "--deploy-mode", "client", \
-                                            "s3://airbnbprj-us/apps/process_weather.py",'{{ execution_date.strftime("%Y-%m") }}']
-                                            
-                },
-            }
-    ],   
-    dag=dag
+        {
+            "Name": "process_weather_submit",
+            "ActionOnFailure": "CONTINUE",
+            "HadoopJarStep": {
+                "Jar": "command-runner.jar",
+                "Args": [
+                    "spark-submit",
+                    "--master",
+                    "yarn",
+                    "--deploy-mode",
+                    "client",
+                    "s3://airbnbprj-us/apps/process_weather.py",
+                    '{{ execution_date.strftime("%Y-%m") }}',
+                ],
+            },
+        }
+    ],
+    dag=dag,
 )
 
 process_weather_wait = EmrStepSensor(
-    task_id='process_weather_wait',
+    task_id="process_weather_wait",
     job_flow_id="{{ task_instance.xcom_pull(task_ids='begin_execution', key='return_value') }}",
     step_id="{{ task_instance.xcom_pull(task_ids='process_weather_submit', key='return_value')[0] }}",
-    aws_conn_id='aws_default',
-    dag=dag
+    aws_conn_id="aws_default",
+    dag=dag,
 )
 
 weather_check = PythonOperator(
-    task_id='weather_check', 
-    python_callable=path_exists,  
-    op_args=[dim_model_weather_new],      
-    dag=dag    
+    task_id="weather_check", python_callable=path_exists, op_args=[dim_model_weather_new], dag=dag
 )
 
-update_dim_model = PythonOperator(
-    task_id='update_dim_model', 
-    python_callable=update_dim_model,
-    dag=dag)
+update_dim_model = PythonOperator(task_id="update_dim_model", python_callable=update_dim_model, dag=dag)
 
 
 drop_tables = PostgresOperator(
-    task_id='drop_tables', 
+    task_id="drop_tables",
     postgres_conn_id="redshift_default",
     sql="""
     DROP TABLE IF EXISTS listings;
@@ -353,11 +369,12 @@ drop_tables = PostgresOperator(
     DROP TABLE IF EXISTS weather;
     DROP TABLE IF EXISTS reviewers;
     """,
-    dag=dag)
+    dag=dag,
+)
 
 
 create_tables = PostgresOperator(
-    task_id='create_tables', 
+    task_id="create_tables",
     postgres_conn_id="redshift_default",
     sql="""
     CREATE TABLE listings(
@@ -473,69 +490,65 @@ create_tables = PostgresOperator(
     last_updated date
     );
     """,
-    dag=dag
-) 
+    dag=dag,
+)
 
 
 copy_listings_to_redshift = S3ToRedshiftTransfer_custom(
-    table='listings',    
+    table="listings",
     s3_key=dim_model_listings,
-    task_id='copy_listings_to_redshift',  
-    copy_options=('CSV','IGNOREHEADER 1'),
-    dag=dag    
+    task_id="copy_listings_to_redshift",
+    copy_options=("CSV", "IGNOREHEADER 1"),
+    dag=dag,
 )
 
 copy_hosts_to_redshift = S3ToRedshiftTransfer_custom(
-    table='hosts',    
+    table="hosts",
     s3_key=dim_model_hosts,
-    task_id='copy_hosts_to_redshift',  
-    copy_options=('CSV','IGNOREHEADER 1'),
-    dag=dag    
+    task_id="copy_hosts_to_redshift",
+    copy_options=("CSV", "IGNOREHEADER 1"),
+    dag=dag,
 )
 
 copy_reviews_to_redshift = S3ToRedshiftTransfer_custom(
-    table='reviews',    
+    table="reviews",
     s3_key=dim_model_reviews,
-    task_id='copy_reviews_to_redshift',  
-    copy_options=('CSV','IGNOREHEADER 1'),
-    dag=dag    
+    task_id="copy_reviews_to_redshift",
+    copy_options=("CSV", "IGNOREHEADER 1"),
+    dag=dag,
 )
 
 copy_reviewers_to_redshift = S3ToRedshiftTransfer_custom(
-    table='reviewers',    
+    table="reviewers",
     s3_key=dim_model_reviewers,
-    task_id='copy_reviewers_to_redshift',  
-    copy_options=('CSV','IGNOREHEADER 1'),
-    dag=dag    
+    task_id="copy_reviewers_to_redshift",
+    copy_options=("CSV", "IGNOREHEADER 1"),
+    dag=dag,
 )
 
 copy_weather_to_redshift = S3ToRedshiftTransfer_custom(
-    table='weather',    
+    table="weather",
     s3_key=dim_model_weather,
-    task_id='copy_weather_to_redshift',  
-    copy_options=('CSV','IGNOREHEADER 1'),
-    dag=dag    
+    task_id="copy_weather_to_redshift",
+    copy_options=("CSV", "IGNOREHEADER 1"),
+    dag=dag,
 )
 
-redshift_check = PythonOperator(
-    task_id='redshift_check', 
-    python_callable=check_redshift_loaded,
-    dag=dag)
+redshift_check = PythonOperator(task_id="redshift_check", python_callable=check_redshift_loaded, dag=dag)
 
 
-
-end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
+end_operator = DummyOperator(task_id="Stop_execution", dag=dag)
 
 
 # DAG
 start_operator >> preprocess_data_submit >> preprocess_data_wait >> preprocess_data_check
 
-preprocess_data_check >> process_listings_hosts_submit >> process_listings_hosts_wait >> listings_hosts_check 
+preprocess_data_check >> process_listings_hosts_submit >> process_listings_hosts_wait >> listings_hosts_check
 listings_hosts_check >> process_reviews_submit >> process_reviews_wait >> reviews_check
 reviews_check >> process_reviewers_submit >> process_reviewers_wait >> reviewers_check >> update_dim_model
-preprocess_data_check >> process_weather_submit >> process_weather_wait >> weather_check >> update_dim_model 
+preprocess_data_check >> process_weather_submit >> process_weather_wait >> weather_check >> update_dim_model
 
-update_dim_model >> drop_tables >> create_tables 
+update_dim_model >> drop_tables >> create_tables
 
 create_tables >> copy_listings_to_redshift >> redshift_check
 create_tables >> copy_hosts_to_redshift >> redshift_check
