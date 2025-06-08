@@ -1,0 +1,21 @@
+line-length = 120
+target-version = "py38"
+exclude = [
+    "etl_notebooks/*",
+    "*.ipynb",
+]
+select = ["E", "F", "I"]
+ignore = [
+    "E501",  # line too long
+    "F403",  # star imports
+    "F401",  # unused imports
+    "F841",  # unused variables
+    "F821",  # undefined names
+    "E711",  # comparison to None
+    "E712",  # comparison to True/False
+]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
