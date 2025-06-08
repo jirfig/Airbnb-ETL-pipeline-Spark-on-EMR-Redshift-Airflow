@@ -24,7 +24,7 @@ services:
       - ../../airflow/AIRFLOW_HOME/plugins:/opt/airflow/plugins
     command: >
       bash -c "airflow db migrate &&\
-      airflow users create --username admin --password admin --firstname admin --lastname admin --role Admin --email admin@example.com --skip-if-exists"
+      airflow users create --username admin --password admin --firstname admin --lastname admin --role Admin --email admin@example.com"
 
   airflow:
     image: apache/airflow:2.11.0
