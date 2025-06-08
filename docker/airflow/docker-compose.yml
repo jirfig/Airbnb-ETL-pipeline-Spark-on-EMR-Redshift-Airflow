@@ -1,0 +1,45 @@
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.11.0
+  environment:
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    _PIP_ADDITIONAL_REQUIREMENTS: -r /requirements.txt
+  volumes:
+    - ../../airflow/AIRFLOW_HOME/dags:/opt/airflow/dags
+    - ../../airflow/AIRFLOW_HOME/plugins:/opt/airflow/plugins
+    - ./requirements.txt:/requirements.txt
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 5s
+      retries: 5
+
+  airflow-init:
+    <<: *airflow-common
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      bash -c "airflow db migrate &&\
+      airflow users create --username admin --password admin --firstname admin --lastname admin --role Admin --email admin@example.com"
+
+  airflow:
+    <<: *airflow-common
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "airflow scheduler & exec airflow webserver"
+

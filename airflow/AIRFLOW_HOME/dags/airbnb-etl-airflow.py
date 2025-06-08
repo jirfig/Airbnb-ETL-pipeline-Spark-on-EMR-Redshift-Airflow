@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.postgres_operator import PostgresOperator
-from airflow.contrib.operators.emr_add_steps_operator import EmrAddStepsOperator
-from airflow.contrib.sensors.emr_step_sensor import EmrStepSensor
-from airflow.contrib.hooks.emr_hook import EmrHook
-from airflow.hooks.S3_hook import S3Hook
-from airflow.hooks.postgres_hook import PostgresHook
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import PythonOperator
+from airflow.providers.postgres.operators.postgres import PostgresOperator
+from airflow.providers.amazon.aws.operators.emr import EmrAddStepsOperator
+from airflow.providers.amazon.aws.sensors.emr import EmrStepSensor
+from airflow.providers.amazon.aws.hooks.emr import EmrHook
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 from operators.s3_to_redshift_operator import S3ToRedshiftTransfer_custom
 
@@ -170,8 +170,7 @@ preprocess_data_submit = EmrAddStepsOperator(
                 },
             }
     ],   
-    dag=dag,
-    provide_context = True
+    dag=dag
 )
 
 preprocess_data_wait = EmrStepSensor(
@@ -212,8 +211,7 @@ process_listings_hosts_submit = EmrAddStepsOperator(
                 },
             }
     ],   
-    dag=dag,
-    provide_context = True
+    dag=dag
 )
 
 process_listings_hosts_wait = EmrStepSensor(
@@ -249,8 +247,7 @@ process_reviews_submit = EmrAddStepsOperator(
                 },
             }
     ],   
-    dag=dag,
-    provide_context = True
+    dag=dag
 )
 
 process_reviews_wait = EmrStepSensor(
@@ -286,8 +283,7 @@ process_reviewers_submit = EmrAddStepsOperator(
                 },
             }
     ],   
-    dag=dag,
-    provide_context = True
+    dag=dag
 )
 
 process_reviewers_wait = EmrStepSensor(
@@ -323,8 +319,7 @@ process_weather_submit = EmrAddStepsOperator(
                 },
             }
     ],   
-    dag=dag,
-    provide_context = True
+    dag=dag
 )
 
 process_weather_wait = EmrStepSensor(

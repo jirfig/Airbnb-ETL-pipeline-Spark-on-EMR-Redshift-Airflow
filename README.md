@@ -112,7 +112,8 @@ Here are some of the most interesting features used:
 - Postgres operator for connection to Redshift
 
 
-To run the Airflow ETL copy contents of [airflow](airflow) folder to $AIRFLOW_HOME. The folder contains .py with DAG definition and plugins folder with one custom operator.
+To run the Airflow ETL copy contents of [airflow](airflow) folder to `$AIRFLOW_HOME` or use the docker compose setup in `docker/airflow`.
+The folder contains `.py` with DAG definition and plugins folder with one custom operator. The compose file initializes the database using an `airflow-init` service and installs the providers listed in `docker/airflow/requirements.txt` through a shared configuration for all Airflow containers.
 
 ![](docs/dag_complete.png)
 
@@ -244,11 +245,17 @@ $ docker run -p 8888:8888 -v $(pwd):/home/jovyan airbnb-etl
 ```
 
 ### 3. Airflow
-Works with Python 3.7.10, Airflow 1.10.9 using LocalExecutor with Postgres 9.6.
+The project now uses Airflow 2.11. A docker compose file is provided to run the
+DAG locally. Both the scheduler and init container reuse a common configuration
+that installs the dependencies listed in `docker/airflow/requirements.txt`. The
+metadata database is initialised automatically using the `airflow-init` service.
+
 ```
-pip install apache-airflow[postgres,aws]==1.10.9
-pip install sqlalchemy==1.3.15
+$ docker compose -f docker/airflow/docker-compose.yml up
 ```
+
+The web UI will be available at http://localhost:8080 (credentials
+`admin`/`admin`).
 
 ## Exploring the data
 
