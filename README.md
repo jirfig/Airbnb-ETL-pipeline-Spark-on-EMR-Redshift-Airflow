@@ -246,9 +246,9 @@ $ docker run -p 8888:8888 -v $(pwd):/home/jovyan airbnb-etl
 
 ### 3. Airflow
 The project now uses Airflow 2.11. A docker compose file is provided to run the
-DAG locally. The metadata database is initialized automatically using the
-`airflow-init` service and installs the required Amazon and Postgres provider
-packages.
+DAG locally. The services install the dependencies listed in
+`docker/airflow/requirements.txt` and the metadata database is initialised
+automatically using the `airflow-init` service.
 
 ```
 $ docker compose -f docker/airflow/docker-compose.yml up
