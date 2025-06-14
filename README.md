@@ -154,6 +154,7 @@ process_weather_wait = EmrStepSensor(
     dag=dag
 )
 ```
+When running these scripts locally, provide a path on the local filesystem as the second argument. All intermediate files will be written under this directory instead of S3.
 
 Example runtime:
 - Creating dimensional model from scratch using January 2021 monthly data.
