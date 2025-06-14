@@ -88,7 +88,7 @@ def main(base_uri: str):
             "xl_picture_url",
             "cancellation_policy",
             "access",
-            "features\r",
+            "features",
             "zipcode",
             "country_code",
             "smart_location",
