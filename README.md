@@ -250,8 +250,8 @@ container without connecting to AWS. A compose file is available in
 `docker/spark`:
 
 ```
-$ docker compose -f docker/spark/docker-compose.yml run --rm spark \
-    spark-submit apps/preprocess_data.py 2021-01 /data
+$ docker compose -f docker/spark/docker-compose.yml up --build spark \
+    spark-submit apps/preprocess_data.py 2021-01 data
 ```
 
 All intermediate files will be written under `docker/spark/data`.

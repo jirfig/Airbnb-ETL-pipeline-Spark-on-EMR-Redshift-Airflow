@@ -7,3 +7,8 @@ services:
       - ./data:/data
     working_dir: /workspace
     command: ["sleep", "infinity"]
+    environment:
+      - SPARK_DRIVER_MEMORY=4g
+      - SPARK_EXECUTOR_MEMORY=4g
+      - SPARK_MEMORY_FRACTION=0.8
+      - SPARK_MEMORY_STORAGE_FRACTION=0.3
