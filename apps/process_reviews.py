@@ -1,18 +1,39 @@
 #!/usr/bin/env python3
 
 import sys
+import random
 
 import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
-from sparknlp.annotator import *
-from sparknlp.base import *
-from sparknlp.pretrained import PretrainedPipeline
 from utils import join_path, model_exists
 
 BUCKET_NAME = "airbnbprj-us"
 
+class DummyPretrainedPipeline:
+    def __init__(self, name, lang="en"):
+        self.name = name
+        self.lang = lang
+        
+    def transform(self, df):
+        if self.name == "detect_language_220":
+            # Randomly assign languages
+            languages = ["en", "es", "fr", "de", "it", "pt", "nl", "ru", "zh", "ja"]
+            return df.withColumn("language", F.struct(F.array([F.lit(random.choice(languages))]).alias("result")))
+        elif self.name == "analyze_sentimentdl_use_imdb":
+            # Randomly assign sentiment
+            sentiments = ["pos", "neg"]
+            return df.withColumn("sentiment", F.struct(F.array([F.lit(random.choice(sentiments))]).alias("result")))
+        return df
 
-def main(base_uri: str):
+def get_pipeline(name, lang="en", use_dummy=False):
+    if use_dummy:
+        return DummyPretrainedPipeline(name, lang)
+    else:
+        # Import SparkNLP modules only when needed
+        from sparknlp.pretrained import PretrainedPipeline
+        return PretrainedPipeline(name, lang)
+
+def main(base_uri: str, use_dummy_pipeline: bool = False):
     spark = SparkSession.builder.appName("process_reviews").getOrCreate()
 
     sc = spark.sparkContext
@@ -126,8 +147,7 @@ def main(base_uri: str):
         df_reviews_delta = df_reviews_delta.limit(10000)
 
     # Detect language, translate, detect sentiment
-    # spark = sparknlp.start()
-    language_detector = PretrainedPipeline("detect_language_220", lang="xx")
+    language_detector = get_pipeline("detect_language_220", lang="xx", use_dummy=use_dummy_pipeline)
     df_result = language_detector.transform(df_reviews_delta)
     df_reviews_delta2 = (
         df_result.withColumn("comment_language", F.concat_ws(",", F.col("language.result")))
@@ -148,7 +168,7 @@ def main(base_uri: str):
         ignoreLeadingWhiteSpace="True",
     )
 
-    sentiment_analyzer = PretrainedPipeline("analyze_sentimentdl_use_imdb", lang="en")
+    sentiment_analyzer = get_pipeline("analyze_sentimentdl_use_imdb", lang="en", use_dummy=use_dummy_pipeline)
     df_result_sentiment = sentiment_analyzer.transform(df_reviews_delta2.filter(F.col("comment_language") == "en"))
     df_result_sentiment = (
         df_result_sentiment.withColumn("sentiment", F.concat_ws(",", F.col("sentiment.result")))
@@ -185,4 +205,5 @@ def main(base_uri: str):
 if __name__ == "__main__":
     scrape_year_month = str(sys.argv[1])
     base_uri = sys.argv[2] if len(sys.argv) > 2 else f"s3://{BUCKET_NAME}"
-    main(base_uri)
+    use_dummy = len(sys.argv) > 3 and sys.argv[3].lower() == "dummy"
+    main(base_uri, use_dummy_pipeline=use_dummy)

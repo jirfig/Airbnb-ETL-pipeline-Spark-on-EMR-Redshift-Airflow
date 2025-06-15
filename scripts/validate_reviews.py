@@ -6,7 +6,7 @@ import logging
 from pyspark.sql import SparkSession
 
 EXPECTED_ROW_COUNTS = {
-    "reviews": None,
+    "reviews": 3299278,
 }
 
 EXPECTED_COLS = {
@@ -42,9 +42,8 @@ def main(base_dir: Path) -> None:
             escape='"', ignoreLeadingWhiteSpace=True
         )
         expected = EXPECTED_ROW_COUNTS["reviews"]
-        if expected is not None:
-            actual = df.count()
-            assert actual == expected, f"reviews: expected {expected}, got {actual}"
+        actual = df.count()
+        assert actual == expected, f"reviews: expected {expected}, got {actual}"
         assert set(df.columns) == set(EXPECTED_COLS["reviews"]), "reviews: schema mismatch"
         print("OK")
     finally:

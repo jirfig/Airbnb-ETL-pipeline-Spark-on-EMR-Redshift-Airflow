@@ -58,7 +58,7 @@ def test_process_listings_hosts(spark_service):
 
 @pytest.mark.order(3)
 def test_process_reviews(spark_service):
-    run_docker(["spark-submit", "apps/process_reviews.py", "2021-01", "data"])
+    run_docker(["spark-submit", "apps/process_reviews.py", "2021-01", "data", "dummy"])
     run_docker(["spark-submit", "scripts/validate_reviews.py", "data"])
 
 
