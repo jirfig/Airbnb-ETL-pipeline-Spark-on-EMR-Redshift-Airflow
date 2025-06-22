@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Validate reviewers.csv produced by process_reviewers.py."""
-from pathlib import Path
-import sys
+
 import logging
+import sys
+from pathlib import Path
+
 from pyspark.sql import SparkSession
 
 EXPECTED_ROW_COUNTS = {
@@ -10,12 +12,11 @@ EXPECTED_ROW_COUNTS = {
 }
 
 EXPECTED_COLS = {
-    "reviewers": [
-        'reviewer_id', 'reviewer_name', 'languages_spoken', 'last_updated'
-    ],
+    "reviewers": ["reviewer_id", "reviewer_name", "languages_spoken", "last_updated"],
 }
 
 FILES = {"reviewers": "reviewers.csv"}
+
 
 def main(base_dir: Path) -> None:
     logging.getLogger("py4j").setLevel(logging.ERROR)
@@ -25,8 +26,7 @@ def main(base_dir: Path) -> None:
     assert root.exists(), f"Directory {root} not found"
 
     spark = (
-        SparkSession.builder
-        .appName("validate_reviewers")
+        SparkSession.builder.appName("validate_reviewers")
         .master("local[*]")
         .config("spark.driver.bindAddress", "127.0.0.1")
         .config("spark.ui.showConsoleProgress", "false")
@@ -37,15 +37,17 @@ def main(base_dir: Path) -> None:
         path = root / FILES["reviewers"]
         assert path.exists(), f"Missing CSV directory: {path}"
         df = spark.read.csv(
-            str(path), header=True, inferSchema=True, multiLine=True,
-            escape='"', ignoreLeadingWhiteSpace=True
+            str(path), header=True, inferSchema=True, multiLine=True, escape='"', ignoreLeadingWhiteSpace=True
         )
         actual = df.count()
-        assert actual == EXPECTED_ROW_COUNTS["reviewers"], f"reviewers: expected {EXPECTED_ROW_COUNTS['reviewers']}, got {actual}"
+        assert actual == EXPECTED_ROW_COUNTS["reviewers"], (
+            f"reviewers: expected {EXPECTED_ROW_COUNTS['reviewers']}, got {actual}"
+        )
         assert set(df.columns) == set(EXPECTED_COLS["reviewers"]), "reviewers: schema mismatch"
         print("OK")
     finally:
         spark.stop()
+
 
 if __name__ == "__main__":
     base = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data")

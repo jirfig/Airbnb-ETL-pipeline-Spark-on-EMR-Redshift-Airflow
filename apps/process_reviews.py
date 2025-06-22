@@ -123,7 +123,6 @@ def main(base_uri: str, use_dummy_pipeline: bool = False):
 
     df_reviews_delta.write.csv(paths.dim_model_reviews_step1, escape='"', header="true")
 
-
     # Detect language, translate, detect sentiment
     language_detector = get_pipeline("detect_language_220", lang="xx", use_dummy=use_dummy_pipeline)
     df_result = language_detector.transform(df_reviews_delta)
