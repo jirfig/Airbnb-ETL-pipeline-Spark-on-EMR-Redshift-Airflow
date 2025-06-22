@@ -4,9 +4,10 @@ import sys
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, SparkSession
-from apps.utils import join_path, model_exists
 
-BUCKET_NAME = "airbnbprj-us"
+from apps.utils import DEFAULT_BUCKET_NAME, build_paths, model_exists
+
+BUCKET_NAME = DEFAULT_BUCKET_NAME
 
 
 def clean_global_listings(df: DataFrame) -> DataFrame:
@@ -58,63 +59,11 @@ def main(base_uri: str):
     ## Paths
     TEST = False
 
-    # S3
-    path_global_listings = "airbnb-listings.csv"
-    path_city_listings = f"cities/*/{scrape_year_month}/listings.csv"
-    path_city_reviews = f"cities/*/{scrape_year_month}/reviews.csv"
+    paths = build_paths(base_uri, scrape_year_month, TEST)
 
-    path_city_temperature = "weather/ECA_blend_tg/*.txt"
-    path_city_rain = "weather/ECA_blend_rr/*.txt"
-
-    raw_data_folder = "raw"
-    # input_parquet_folder = "input_parquets_notebook"
-    # dim_model_folder = "dim_model_notebook"
-    # dim_model_folder_new = "dim_model_notebook_temp"
-    input_parquet_folder = "input_parquets_airflow"
-    dim_model_folder = "dim_model_airflow"
-    dim_model_folder_new = "dim_model_airflow_temp"
-
-    if TEST:
-        input_parquet_folder += "_test"
-        dim_model_folder += "_test"
-        dim_model_folder_new += "_test"
-
-    raw_global_listings_path = join_path(base_uri, raw_data_folder, path_global_listings)
-    raw_city_listings_path = join_path(base_uri, raw_data_folder, path_city_listings)
-    raw_city_reviews_path = join_path(base_uri, raw_data_folder, path_city_reviews)
-    raw_city_temperature_path = join_path(base_uri, raw_data_folder, path_city_temperature)
-    raw_city_rain_data_path = join_path(base_uri, raw_data_folder, path_city_rain)
-
-    path_out_global_listings = join_path(base_uri, input_parquet_folder, "global_listings.parquet")
-    path_out_city_listings_data = join_path(
-        base_uri, input_parquet_folder, f"city_listings/{scrape_year_month}/city_listings.parquet"
-    )
-    path_out_city_reviews_data = join_path(
-        base_uri, input_parquet_folder, f"city_reviews/{scrape_year_month}/city_reviews.parquet"
-    )
-    path_out_city_temperature_data = join_path(base_uri, input_parquet_folder, "city_temperature.parquet")
-    path_out_city_rain_data = join_path(base_uri, input_parquet_folder, "city_rain.parquet")
-    path_out_weather_stations = join_path(base_uri, input_parquet_folder, "weather_stations.parquet")
-
-    dim_model_listings = join_path(base_uri, dim_model_folder, "listings.csv")
-    dim_model_hosts = join_path(base_uri, dim_model_folder, "hosts.csv")
-    dim_model_reviews = join_path(base_uri, dim_model_folder, "reviews.csv")
-    dim_model_reviewers = join_path(base_uri, dim_model_folder, "reviewers.csv")
-    dim_model_weather = join_path(base_uri, dim_model_folder, "weather.csv")
-
-    dim_model_listings_new = join_path(base_uri, dim_model_folder_new, "listings.csv")
-    dim_model_hosts_new = join_path(base_uri, dim_model_folder_new, "hosts.csv")
-    dim_model_reviews_new = join_path(base_uri, dim_model_folder_new, "reviews.csv")
-    dim_model_reviewers_new = join_path(base_uri, dim_model_folder_new, "reviewers.csv")
-    dim_model_weather_new = join_path(base_uri, dim_model_folder_new, "weather.csv")
-
-    dim_model_reviews_step1 = join_path(base_uri, dim_model_folder_new, "reviews_step1.csv")
-    dim_model_reviews_step2 = join_path(base_uri, dim_model_folder_new, "reviews_step2.csv")
-    ##
-
-    if not model_exists(path_out_global_listings):
+    if not model_exists(paths.path_out_global_listings):
         df_global_listings = spark.read.csv(
-            raw_global_listings_path,
+            paths.raw_global_listings,
             header="True",
             inferSchema="True",
             multiLine="True",
@@ -126,14 +75,14 @@ def main(base_uri: str):
 
         if TEST:
             df_global_listings.filter("city = 'Amsterdam'").write.partitionBy("scrape_year", "scrape_month").parquet(
-                path_out_global_listings
+                paths.path_out_global_listings
             )
         else:
-            df_global_listings.write.partitionBy("scrape_year", "scrape_month").parquet(path_out_global_listings)
+            df_global_listings.write.partitionBy("scrape_year", "scrape_month").parquet(paths.path_out_global_listings)
 
-    if not model_exists(path_out_city_listings_data):
+    if not model_exists(paths.path_out_city_listings_data):
         df_city_listings = spark.read.csv(
-            raw_city_listings_path,
+            paths.raw_city_listings,
             header="True",
             inferSchema="True",
             multiLine="True",
@@ -147,14 +96,14 @@ def main(base_uri: str):
 
         if TEST:
             df_city_listings.filter("city = 'Amsterdam'").write.partitionBy("scrape_year", "scrape_month").parquet(
-                path_out_city_listings_data
+                paths.path_out_city_listings_data
             )
         else:
-            df_city_listings.write.partitionBy("scrape_year", "scrape_month").parquet(path_out_city_listings_data)
+            df_city_listings.write.partitionBy("scrape_year", "scrape_month").parquet(paths.path_out_city_listings_data)
 
-    if not model_exists(path_out_city_reviews_data):
+    if not model_exists(paths.path_out_city_reviews_data):
         df_city_reviews = spark.read.csv(
-            raw_city_reviews_path,
+            paths.raw_city_reviews,
             header="True",
             inferSchema="True",
             multiLine="True",
@@ -168,14 +117,14 @@ def main(base_uri: str):
 
         if TEST:
             df_city_reviews.filter("city = 'Amsterdam'").write.partitionBy("year", "month", "city").parquet(
-                path_out_city_reviews_data
+                paths.path_out_city_reviews_data
             )
         else:
-            df_city_reviews.write.partitionBy("year", "month", "city").parquet(path_out_city_reviews_data)
+            df_city_reviews.write.partitionBy("year", "month", "city").parquet(paths.path_out_city_reviews_data)
 
-    if not model_exists(path_out_city_temperature_data):
+    if not model_exists(paths.path_out_city_temperature_data):
         text = (
-            sc.textFile(raw_city_temperature_path)
+            sc.textFile(paths.raw_city_temperature)
             .map(lambda line: line.replace(" ", "").split(","))
             .filter(lambda line: len(line) == 5)
             .filter(lambda line: line[0] != "STAID")
@@ -184,11 +133,11 @@ def main(base_uri: str):
         df = spark.createDataFrame(text)
         columns = ["STAID", "SOUID", "DATE", "TG", "Q_TG"]
         df = df.toDF(*columns)
-        df.write.parquet(path_out_city_temperature_data)
+        df.write.parquet(paths.path_out_city_temperature_data)
 
-    if not model_exists(path_out_city_rain_data):
+    if not model_exists(paths.path_out_city_rain_data):
         text = (
-            sc.textFile(raw_city_rain_data_path)
+            sc.textFile(paths.raw_city_rain)
             .map(lambda line: line.replace(" ", "").split(","))
             .filter(lambda line: len(line) == 5)
             .filter(lambda line: line[0] != "STAID")
@@ -197,13 +146,13 @@ def main(base_uri: str):
         df = spark.createDataFrame(text)
         columns = ["STAID", "SOUID", "DATE", "RR", "Q_TG"]
         df = df.toDF(*columns)
-        df.write.parquet(path_out_city_rain_data)
+        df.write.parquet(paths.path_out_city_rain_data)
 
-    if not model_exists(path_out_weather_stations):
+    if not model_exists(paths.path_out_weather_stations):
         station_city = [(593, "Amsterdam"), (41, "Berlin"), (1860, "London"), (11249, "Paris")]
         columns = ["STAID", "city"]
         df_stations = spark.createDataFrame(data=station_city, schema=columns)
-        df_stations.write.parquet(path_out_weather_stations)
+        df_stations.write.parquet(paths.path_out_weather_stations)
 
 
 if __name__ == "__main__":
