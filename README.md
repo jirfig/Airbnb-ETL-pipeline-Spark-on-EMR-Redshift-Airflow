@@ -154,6 +154,7 @@ process_weather_wait = EmrStepSensor(
     dag=dag
 )
 ```
+When running these scripts locally, provide a path on the local filesystem as the second argument. All intermediate files will be written under this directory instead of S3.
 
 Example runtime:
 - Creating dimensional model from scratch using January 2021 monthly data.
@@ -233,7 +234,7 @@ Cluster configuration is described in [docs/aws_create_cluster.txt](docs/aws_cre
 
 Two options to run:
 1. without Docker
-- install dependecies in [/docker/requirements.txt](/docker/requirements.txt)
+   - install dependecies in [/docker/requirements.txt](/docker/requirements.txt)
 
 2. using Docker
 
@@ -243,6 +244,17 @@ $ cd <root of the repo>
 $ docker build --tag airbnb-etl docker/
 $ docker run -p 8888:8888 -v $(pwd):/home/jovyan airbnb-etl
 ```
+
+Processing scripts in [apps](apps) can also run in a lightweight Spark
+container without connecting to AWS. A compose file is available in
+`docker/spark`:
+
+```
+$ docker compose -f docker/spark/docker-compose.yml up --build spark \
+    spark-submit apps/preprocess_data.py 2021-01 data
+```
+
+All intermediate files will be written under `docker/spark/data`.
 
 ### 3. Airflow
 The project now uses Airflow 2.11. A docker compose file is provided to run the
