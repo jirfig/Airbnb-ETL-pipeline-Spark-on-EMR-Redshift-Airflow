@@ -57,9 +57,7 @@ def main(base_uri: str):
     sc = spark.sparkContext
 
     ## Paths
-    TEST = False
-
-    paths = build_paths(base_uri, scrape_year_month, TEST)
+    paths = build_paths(base_uri, scrape_year_month)
 
     if not model_exists(paths.path_out_global_listings):
         df_global_listings = spark.read.csv(
@@ -73,12 +71,7 @@ def main(base_uri: str):
         )
         df_global_listings = clean_global_listings(df_global_listings)
 
-        if TEST:
-            df_global_listings.filter("city = 'Amsterdam'").write.partitionBy("scrape_year", "scrape_month").parquet(
-                paths.path_out_global_listings
-            )
-        else:
-            df_global_listings.write.partitionBy("scrape_year", "scrape_month").parquet(paths.path_out_global_listings)
+        df_global_listings.write.partitionBy("scrape_year", "scrape_month").parquet(paths.path_out_global_listings)
 
     if not model_exists(paths.path_out_city_listings_data):
         df_city_listings = spark.read.csv(
@@ -94,12 +87,7 @@ def main(base_uri: str):
             "scrape_month", F.month(F.col("last_scraped"))
         )
 
-        if TEST:
-            df_city_listings.filter("city = 'Amsterdam'").write.partitionBy("scrape_year", "scrape_month").parquet(
-                paths.path_out_city_listings_data
-            )
-        else:
-            df_city_listings.write.partitionBy("scrape_year", "scrape_month").parquet(paths.path_out_city_listings_data)
+        df_city_listings.write.partitionBy("scrape_year", "scrape_month").parquet(paths.path_out_city_listings_data)
 
     if not model_exists(paths.path_out_city_reviews_data):
         df_city_reviews = spark.read.csv(
@@ -115,12 +103,7 @@ def main(base_uri: str):
             "month", F.month(F.col("date"))
         )
 
-        if TEST:
-            df_city_reviews.filter("city = 'Amsterdam'").write.partitionBy("year", "month", "city").parquet(
-                paths.path_out_city_reviews_data
-            )
-        else:
-            df_city_reviews.write.partitionBy("year", "month", "city").parquet(paths.path_out_city_reviews_data)
+        df_city_reviews.write.partitionBy("year", "month", "city").parquet(paths.path_out_city_reviews_data)
 
     if not model_exists(paths.path_out_city_temperature_data):
         text = (

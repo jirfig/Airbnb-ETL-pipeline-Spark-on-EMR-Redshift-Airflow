@@ -41,9 +41,7 @@ def main(base_uri: str):
     sc = spark.sparkContext
 
     ## Paths
-    TEST = False
-
-    paths = build_paths(base_uri, scrape_year_month, TEST)
+    paths = build_paths(base_uri, scrape_year_month)
 
     if not model_exists(paths.dim_model_listings):
         # import global listings
