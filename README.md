@@ -286,6 +286,16 @@ You can run all checks manually with:
 pre-commit run --all-files
 ```
 
+### Running tests
+
+Tests rely on Docker Compose to start a Spark service. To run them on a local
+environment without Docker, set the `USE_DOCKER_TESTS` environment variable to
+`0`:
+
+```bash
+USE_DOCKER_TESTS=0 pytest -q
+```
+
 ## Exploring the data
 
 Note: Main focus of this project is the ETL pipeline toolchain. NLP algorithms such as language detection and sentiment analysis are included for demonstration only. Language detection appears to have worked quite well, but it is far from perfect. Quality of sentiment analysis is poor at best. Do not make any conclusions from the query results of the final model. 
