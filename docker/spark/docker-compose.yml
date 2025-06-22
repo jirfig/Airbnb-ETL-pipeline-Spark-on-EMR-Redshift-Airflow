@@ -12,3 +12,4 @@ services:
       - SPARK_EXECUTOR_MEMORY=4g
       - SPARK_MEMORY_FRACTION=0.8
       - SPARK_MEMORY_STORAGE_FRACTION=0.3
+      - PYTHONPATH=/workspace

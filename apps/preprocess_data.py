@@ -4,7 +4,7 @@ import sys
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, SparkSession
-from utils import join_path, model_exists
+from apps.utils import join_path, model_exists
 
 BUCKET_NAME = "airbnbprj-us"
 

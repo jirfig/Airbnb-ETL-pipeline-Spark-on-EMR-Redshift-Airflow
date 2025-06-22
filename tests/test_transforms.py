@@ -42,4 +42,4 @@ def spark_service():
 
 
 def test_transformations(spark_service):
-    run_docker(["python", "tests/check_transforms.py"])
+    run_docker(["python", "-m", "tests.check_transforms"])
