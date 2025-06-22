@@ -3,10 +3,51 @@
 import sys
 
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from utils import join_path, model_exists
 
 BUCKET_NAME = "airbnbprj-us"
+
+
+def clean_global_listings(df: DataFrame) -> DataFrame:
+    """Clean the global listings dataframe."""
+    df = df.toDF(*[c.replace(" ", "_").lower() for c in df.columns])
+    columns_to_drop = [
+        "xl_picture_url",
+        "cancellation_policy",
+        "access",
+        "features",
+        "zipcode",
+        "country_code",
+        "smart_location",
+        "country",
+        "security_deposit",
+        "medium_url",
+        "transit",
+        "cleaning_fee",
+        "street",
+        "experiences_offered",
+        "thumbnail_url",
+        "extra_people",
+        "weekly_price",
+        "notes",
+        "house_rules",
+        "monthly_price",
+        "summary",
+        "square_feet",
+        "interaction",
+        "state",
+        "jurisdiction_names",
+        "market",
+        "geolocation",
+        "space",
+        "bed_type",
+        "guests_included",
+    ]
+    df = df.drop(*columns_to_drop)
+    return df.withColumn("scrape_year", F.year(F.col("last_scraped"))).withColumn(
+        "scrape_month", F.month(F.col("last_scraped"))
+    )
 
 
 def main(base_uri: str):
@@ -81,45 +122,7 @@ def main(base_uri: str):
             ignoreLeadingWhiteSpace="True",
             sep=";",
         )
-        df_global_listings = df_global_listings.toDF(
-            *[column.replace(" ", "_").lower() for column in df_global_listings.columns]
-        )
-        columns_to_drop = [
-            "xl_picture_url",
-            "cancellation_policy",
-            "access",
-            "features",
-            "zipcode",
-            "country_code",
-            "smart_location",
-            "country",
-            "security_deposit",
-            "medium_url",
-            "transit",
-            "cleaning_fee",
-            "street",
-            "experiences_offered",
-            "thumbnail_url",
-            "extra_people",
-            "weekly_price",
-            "notes",
-            "house_rules",
-            "monthly_price",
-            "summary",
-            "square_feet",
-            "interaction",
-            "state",
-            "jurisdiction_names",
-            "market",
-            "geolocation",
-            "space",
-            "bed_type",
-            "guests_included",
-        ]
-        df_global_listings = df_global_listings.drop(*columns_to_drop)
-        df_global_listings = df_global_listings.withColumn("scrape_year", F.year(F.col("last_scraped"))).withColumn(
-            "scrape_month", F.month(F.col("last_scraped"))
-        )
+        df_global_listings = clean_global_listings(df_global_listings)
 
         if TEST:
             df_global_listings.filter("city = 'Amsterdam'").write.partitionBy("scrape_year", "scrape_month").parquet(

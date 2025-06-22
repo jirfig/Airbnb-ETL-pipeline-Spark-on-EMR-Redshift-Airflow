@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 
-import sys
 import random
+import sys
 
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from utils import join_path, model_exists
 
 BUCKET_NAME = "airbnbprj-us"
+
 
 class DummyPretrainedPipeline:
     def __init__(self, name, lang="en"):
         self.name = name
         self.lang = lang
-        
+
     def transform(self, df):
         if self.name == "detect_language_220":
             # Randomly assign languages
@@ -25,13 +26,45 @@ class DummyPretrainedPipeline:
             return df.withColumn("sentiment", F.struct(F.array([F.lit(random.choice(sentiments))]).alias("result")))
         return df
 
+
 def get_pipeline(name, lang="en", use_dummy=False):
     if use_dummy:
         return DummyPretrainedPipeline(name, lang)
     else:
         # Import SparkNLP modules only when needed
         from sparknlp.pretrained import PretrainedPipeline
+
         return PretrainedPipeline(name, lang)
+
+
+def apply_language_and_sentiment(df: DataFrame, language_detector, sentiment_analyzer) -> DataFrame:
+    """Detect language and sentiment of review comments."""
+    df_result = language_detector.transform(df)
+    df_lang = (
+        df_result.withColumn("comment_language", F.concat_ws(",", F.col("language.result")))
+        .drop("document")
+        .drop("sentence")
+        .drop("language")
+        .withColumnRenamed("text", "comments")
+    )
+
+    df_result_sentiment = sentiment_analyzer.transform(df_lang.filter(F.col("comment_language") == "en"))
+    df_result_sentiment = (
+        df_result_sentiment.withColumn("sentiment", F.concat_ws(",", F.col("sentiment.result")))
+        .drop("document")
+        .drop("sentence_embeddings")
+        .withColumnRenamed("text", "comments")
+    )
+
+    df_reviews_null = df_lang.filter("comment_language is null").withColumn("sentiment", F.lit("n/a"))
+    df_final = (
+        df_lang.filter("comment_language != 'en'")
+        .withColumn("sentiment", F.lit("n/a"))
+        .union(df_result_sentiment)
+        .union(df_reviews_null)
+    )
+    return df_final
+
 
 def main(base_uri: str, use_dummy_pipeline: bool = False):
     spark = SparkSession.builder.appName("process_reviews").getOrCreate()
@@ -169,21 +202,7 @@ def main(base_uri: str, use_dummy_pipeline: bool = False):
     )
 
     sentiment_analyzer = get_pipeline("analyze_sentimentdl_use_imdb", lang="en", use_dummy=use_dummy_pipeline)
-    df_result_sentiment = sentiment_analyzer.transform(df_reviews_delta2.filter(F.col("comment_language") == "en"))
-    df_result_sentiment = (
-        df_result_sentiment.withColumn("sentiment", F.concat_ws(",", F.col("sentiment.result")))
-        .drop("document")
-        .drop("sentence_embeddings")
-        .withColumnRenamed("text", "comments")
-    )
-
-    df_reviews_null = df_reviews_delta2.filter("comment_language is null").withColumn("sentiment", F.lit("n/a"))
-    df_reviews_delta3 = (
-        df_reviews_delta2.filter("comment_language != 'en'")
-        .withColumn("sentiment", F.lit("n/a"))
-        .union(df_result_sentiment)
-        .union(df_reviews_null)
-    )
+    df_reviews_delta3 = apply_language_and_sentiment(df_reviews_delta2, language_detector, sentiment_analyzer)
 
     if not model_exists(dim_model_reviews):
         df_reviews_delta3.write.csv(dim_model_reviews_new, escape='"', header="true")
