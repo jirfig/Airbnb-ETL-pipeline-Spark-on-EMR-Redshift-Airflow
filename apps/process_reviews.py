@@ -73,9 +73,7 @@ def main(base_uri: str, use_dummy_pipeline: bool = False):
     sc = spark.sparkContext
 
     ## Paths
-    TEST = False
-
-    paths = build_paths(base_uri, scrape_year_month, TEST)
+    paths = build_paths(base_uri, scrape_year_month)
 
     df_reviews_monthly = spark.read.parquet(paths.path_out_city_reviews_data)
 
@@ -125,8 +123,6 @@ def main(base_uri: str, use_dummy_pipeline: bool = False):
 
     df_reviews_delta.write.csv(paths.dim_model_reviews_step1, escape='"', header="true")
 
-    if TEST:
-        df_reviews_delta = df_reviews_delta.limit(10000)
 
     # Detect language, translate, detect sentiment
     language_detector = get_pipeline("detect_language_220", lang="xx", use_dummy=use_dummy_pipeline)

@@ -52,17 +52,13 @@ def model_exists(path: str) -> bool:
     return Path(path).exists()
 
 
-def build_paths(base_uri: str, scrape_year_month: str, test: bool = False) -> DataPaths:
+def build_paths(base_uri: str, scrape_year_month: str) -> DataPaths:
     """Return all data paths used in the ETL pipeline."""
     raw_data_folder = "raw"
     input_parquet_folder = "input_parquets_airflow"
     dim_model_folder = "dim_model_airflow"
     dim_model_folder_new = "dim_model_airflow_temp"
 
-    if test:
-        input_parquet_folder += "_test"
-        dim_model_folder += "_test"
-        dim_model_folder_new += "_test"
 
     path_global_listings = "airbnb-listings.csv"
     path_city_listings = f"cities/*/{scrape_year_month}/listings.csv"
