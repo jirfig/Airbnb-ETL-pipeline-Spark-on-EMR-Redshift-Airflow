@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+
 from tests.conftest import run_docker
 
 
@@ -32,4 +33,3 @@ def test_process_reviewers(spark_service):
 def test_process_weather(spark_service):
     run_docker(["spark-submit", "apps/process_weather.py", "2021-01", "data"])
     run_docker(["spark-submit", "tests/validation/validate_weather.py", "data"])
-

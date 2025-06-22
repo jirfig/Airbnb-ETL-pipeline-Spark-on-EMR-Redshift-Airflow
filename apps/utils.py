@@ -59,7 +59,6 @@ def build_paths(base_uri: str, scrape_year_month: str) -> DataPaths:
     dim_model_folder = "dim_model_airflow"
     dim_model_folder_new = "dim_model_airflow_temp"
 
-
     path_global_listings = "airbnb-listings.csv"
     path_city_listings = f"cities/*/{scrape_year_month}/listings.csv"
     path_city_reviews = f"cities/*/{scrape_year_month}/reviews.csv"

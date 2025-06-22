@@ -4,6 +4,8 @@ exclude = [
     "etl_notebooks/*",
     "*.ipynb",
 ]
+
+[lint]
 select = ["E", "F", "I"]
 ignore = ["E501", "F403", "F841"]
 
