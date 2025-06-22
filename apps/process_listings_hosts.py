@@ -3,11 +3,35 @@
 import sys
 
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.window import Window
-from utils import join_path, model_exists
+from apps.utils import join_path, model_exists
 
 BUCKET_NAME = "airbnbprj-us"
+
+
+def drop_host_columns(df: DataFrame) -> DataFrame:
+    """Remove host related columns from the listings dataframe."""
+    columns_to_drop = [
+        "host_name",
+        "host_url",
+        "host_since",
+        "host_location",
+        "host_about",
+        "host_response_time",
+        "host_response_rate",
+        "host_acceptance_rate",
+        "host_is_superhost",
+        "host_thumbnail_url",
+        "host_picture_url",
+        "host_neighbourhood",
+        "host_listings_count",
+        "host_total_listings_count",
+        "host_verifications",
+        "host_has_profile_pic",
+        "host_identity_verified",
+    ]
+    return df.drop(*columns_to_drop)
 
 
 def main(base_uri: str):
@@ -89,26 +113,7 @@ def main(base_uri: str):
 
     if not model_exists(dim_model_listings):
         # drop hosts columns from listings, except host_id
-        columns_to_drop = [
-            "host_name",
-            "host_url",
-            "host_since",
-            "host_location",
-            "host_about",
-            "host_response_time",
-            "host_response_rate",
-            "host_acceptance_rate",
-            "host_is_superhost",
-            "host_thumbnail_url",
-            "host_picture_url",
-            "host_neighbourhood",
-            "host_listings_count",
-            "host_total_listings_count",
-            "host_verifications",
-            "host_has_profile_pic",
-            "host_identity_verified",
-        ]
-        df_listings = df_listings_hosts.drop(*columns_to_drop)
+        df_listings = drop_host_columns(df_listings_hosts)
 
     if model_exists(dim_model_listings):
         df_listings = spark.read.csv(
@@ -124,26 +129,7 @@ def main(base_uri: str):
     df_listings_hosts_monthly = df_listings_hosts_monthly.select(sorted(df_listings_hosts_monthly.columns))
 
     # drop hosts columns from listings, except host_id
-    columns_to_drop = [
-        "host_name",
-        "host_url",
-        "host_since",
-        "host_location",
-        "host_about",
-        "host_response_time",
-        "host_response_rate",
-        "host_acceptance_rate",
-        "host_is_superhost",
-        "host_thumbnail_url",
-        "host_picture_url",
-        "host_neighbourhood",
-        "host_listings_count",
-        "host_total_listings_count",
-        "host_verifications",
-        "host_has_profile_pic",
-        "host_identity_verified",
-    ]
-    df_listings_monthly = df_listings_hosts_monthly.drop(*columns_to_drop).withColumnRenamed("id", "listing_id")
+    df_listings_monthly = drop_host_columns(df_listings_hosts_monthly).withColumnRenamed("id", "listing_id")
 
     # merge global and local listings, drop duplicates by filtering by latest scrape date
     df_listings_updated = df_listings.union(df_listings_monthly)

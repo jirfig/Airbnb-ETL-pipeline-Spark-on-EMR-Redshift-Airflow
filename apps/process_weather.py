@@ -3,10 +3,25 @@
 import sys
 
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
-from utils import join_path
+from pyspark.sql import DataFrame, SparkSession
+from apps.utils import join_path
 
 BUCKET_NAME = "airbnbprj-us"
+
+
+def join_weather(df_temp: DataFrame, df_rain: DataFrame, df_stations: DataFrame) -> DataFrame:
+    """Join weather measurements with station information."""
+    df = df_temp.join(df_rain, ["STAID", "DATE"]).join(df_stations, "STAID")
+    df = df.withColumn("date", F.to_date("DATE", "yyyyMMdd"))
+    df = df.where(F.col("date") > F.to_date(F.lit("20090101"), "yyyyMMdd"))
+    df = df.select(
+        F.concat_ws("_", F.col("city"), F.col("date")).alias("weather_id"),
+        "date",
+        (F.col("TG") / 10).alias("temperature"),
+        (F.col("RR") / 10).alias("rain"),
+        "city",
+    )
+    return df.orderBy("date")
 
 
 def main(base_uri: str):
@@ -75,23 +90,7 @@ def main(base_uri: str):
     df_rain = spark.read.parquet(path_out_city_rain_data)
     df_stations = spark.read.parquet(path_out_weather_stations)
 
-    df_temp.createOrReplaceTempView("temp")
-    df_rain.createOrReplaceTempView("rain")
-    df_stations.createOrReplaceTempView("stations")
-
-    query = """
-    SELECT null as weather_id,to_date(temp.DATE, "yyyyMMdd") as date, temp.TG/10 as temperature, rain.RR/10 as rain, stations.city
-    FROM temp
-    JOIN rain
-    ON temp.DATE == rain.DATE
-    AND temp.STAID == rain.STAID
-    JOIN stations
-    ON temp.STAID == stations.STAID
-    WHERE to_date(temp.DATE, "yyyyMMdd") > to_date('20090101',"yyyyMMdd")
-    ORDER BY date
-    """
-    df_weather = spark.sql(query)
-    df_weather = df_weather.withColumn("weather_id", F.concat_ws("_", "city", "date"))
+    df_weather = join_weather(df_temp, df_rain, df_stations)
 
     df_weather.write.csv(dim_model_weather_new, escape='"', header="true")
 

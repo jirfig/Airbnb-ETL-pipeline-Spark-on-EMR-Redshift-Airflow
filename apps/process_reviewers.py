@@ -3,11 +3,29 @@
 import sys
 
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.window import Window
-from utils import join_path
+from apps.utils import join_path
 
 BUCKET_NAME = "airbnbprj-us"
+
+
+def build_reviewers_table(df_reviews: DataFrame) -> DataFrame:
+    """Aggregate reviewer information from reviews."""
+    windowSpec = (
+        Window.partitionBy("reviewer_id")
+        .orderBy("date")
+        .rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
+    )
+    df_reviewers = (
+        df_reviews.withColumn("languages_spoken", F.collect_set("comment_language").over(windowSpec))
+        .withColumn("latest", F.last("date").over(windowSpec))
+        .filter("date == latest")
+        .dropDuplicates(["reviewer_id"])
+        .select("reviewer_id", "reviewer_name", "languages_spoken", "date")
+        .withColumnRenamed("date", "last_updated")
+    )
+    return df_reviewers.withColumn("languages_spoken", F.array_join("languages_spoken", ","))
 
 
 def main(base_uri: str):
@@ -81,20 +99,7 @@ def main(base_uri: str):
         ignoreLeadingWhiteSpace="True",
     )
 
-    windowSpec = (
-        Window.partitionBy("reviewer_id")
-        .orderBy("date")
-        .rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
-    )
-    df_reviewers = (
-        df_reviews.withColumn("languages_spoken", F.collect_set("comment_language").over(windowSpec))
-        .withColumn("latest", F.last("date").over(windowSpec))
-        .filter("date == latest")
-        .dropDuplicates(["reviewer_id"])
-        .select("reviewer_id", "reviewer_name", "languages_spoken", "date")
-        .withColumnRenamed("date", "last_updated")
-    )
-    df_reviewers = df_reviewers.withColumn("languages_spoken", F.array_join("languages_spoken", ","))
+    df_reviewers = build_reviewers_table(df_reviews)
 
     df_reviewers.write.csv(dim_model_reviewers_new, escape='"', header="true")
 
